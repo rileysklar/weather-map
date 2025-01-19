@@ -224,29 +224,29 @@ export default function Map() {
 
   // Load project sites function
   const loadProjectSites = async () => {
+    if (!mapInstance) return;
+    const map = mapInstance as mapboxgl.Map;
+    
     try {
       const sites = await projectSitesService.getAll();
       setProjectSites(sites);
-      
-      // Add sites to map if it exists
-      if (!mapInstance) return;
       
       sites.forEach((site) => {
         const sourceId = `project-site-${site.id}`;
         
         // Remove existing layers and source if they exist
-        if (mapInstance.getLayer(`${sourceId}-fill`)) {
-          mapInstance.removeLayer(`${sourceId}-fill`);
+        if (map.getLayer(`${sourceId}-fill`)) {
+          map.removeLayer(`${sourceId}-fill`);
         }
-        if (mapInstance.getLayer(`${sourceId}-outline`)) {
-          mapInstance.removeLayer(`${sourceId}-outline`);
+        if (map.getLayer(`${sourceId}-outline`)) {
+          map.removeLayer(`${sourceId}-outline`);
         }
-        if (mapInstance.getSource(sourceId)) {
-          mapInstance.removeSource(sourceId);
+        if (map.getSource(sourceId)) {
+          map.removeSource(sourceId);
         }
 
         // Add source and layers
-        mapInstance.addSource(sourceId, {
+        map.addSource(sourceId, {
           type: 'geojson',
           data: {
             type: 'Feature',
@@ -260,7 +260,7 @@ export default function Map() {
         });
 
         // Add fill layer
-        mapInstance.addLayer({
+        map.addLayer({
           id: `${sourceId}-fill`,
           type: 'fill',
           source: sourceId,
@@ -271,7 +271,7 @@ export default function Map() {
         });
 
         // Add outline layer
-        mapInstance.addLayer({
+        map.addLayer({
           id: `${sourceId}-outline`,
           type: 'line',
           source: sourceId,
