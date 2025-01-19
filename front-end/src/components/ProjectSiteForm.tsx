@@ -9,62 +9,77 @@ import { Label } from '@/components/ui/label';
 import { X } from 'lucide-react';
 
 interface ProjectSiteFormProps {
-  onSuccess: () => void;
-  onError: (error: string) => void;
-  onCancel: () => void;
   isDrawing: boolean;
-  currentPolygon: number[][];
+  currentPolygon: Array<{ id: string; coordinates: number[]; index: number }>;
+  onSubmit: (data: { name: string; description: string; polygon: number[][] }) => void;
+  onCancel: () => void;
 }
 
-export function ProjectSiteForm({ 
-  onSuccess, 
-  onError, 
-  onCancel,
-  isDrawing,
-  currentPolygon 
+export default function ProjectSiteForm({ 
+  isDrawing = false, 
+  currentPolygon = [], 
+  onSubmit, 
+  onCancel 
 }: ProjectSiteFormProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
-    if (currentPolygon.length < 3) {
-      onError('Please draw a polygon with at least 3 points');
+    if (!name.trim()) {
+      setError('Please enter a name for the project site');
       return;
     }
 
-    try {
-      const response = await fetch('/api/project-sites', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name,
-          description,
-          polygon: {
-            type: 'Polygon',
-            coordinates: [[...currentPolygon, currentPolygon[0]]] // Close the polygon
-          }
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create project site');
-      }
-
-      setName('');
-      setDescription('');
-      onSuccess();
-    } catch (error) {
-      console.error('Error creating project site:', error);
-      onError('Failed to create project site');
+    if (!currentPolygon || currentPolygon.length < 3) {
+      setError('Please select at least 3 points on the map to create a polygon');
+      return;
     }
+
+    onSubmit({
+      name: name.trim(),
+      description: description.trim(),
+      polygon: currentPolygon.map(point => point.coordinates)
+    });
+  };
+
+  // Render coordinates table only if we have valid points
+  const renderCoordinatesTable = () => {
+    if (!currentPolygon || currentPolygon.length === 0) {
+      return (
+        <div className="p-4 text-center text-gray-500">
+          No points added yet
+        </div>
+      );
+    }
+
+    return (
+      <table className="w-full text-sm">
+        <thead className="bg-gray-50/50 sticky top-0">
+          <tr>
+            <th className="px-4 py-2 text-left">#</th>
+            <th className="px-4 py-2 text-left">Longitude</th>
+            <th className="px-4 py-2 text-left">Latitude</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200">
+          {currentPolygon.map(point => (
+            <tr key={point.id}>
+              <td className="px-4 py-2">{point.index}</td>
+              <td className="px-4 py-2">{point.coordinates[0].toFixed(6)}</td>
+              <td className="px-4 py-2">{point.coordinates[1].toFixed(6)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
   };
 
   return (
-    <Card className="w-96 absolute top-4 right-4 bg-white/90 backdrop-blur-sm border-white/20">
+    <Card className="w-96 backdrop-blur-sm border-white/20">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-xl font-bold">New Project Site</CardTitle>
         <Button
@@ -99,12 +114,18 @@ export function ProjectSiteForm({
               required
             />
           </div>
+          <div className="space-y-2">
+            <Label>Polygon Points</Label>
+            <div className="max-h-[200px] overflow-y-auto rounded-md border border-gray-200 bg-white/50">
+              {renderCoordinatesTable()}
+            </div>
+          </div>
           <div className="pt-2">
             {isDrawing ? (
               <p className="text-sm text-blue-600">
                 Click on the map to draw a polygon. Click the first point to close the shape.
               </p>
-            ) : currentPolygon.length > 0 ? (
+            ) : currentPolygon && currentPolygon.length > 0 ? (
               <p className="text-sm text-green-600">
                 ✓ Polygon drawn with {currentPolygon.length} points
               </p>
@@ -114,6 +135,11 @@ export function ProjectSiteForm({
               </p>
             )}
           </div>
+          {error && (
+            <div className="text-red-400 text-sm">
+              {error}
+            </div>
+          )}
           <div className="flex justify-end space-x-2">
             <Button
               type="button"
@@ -124,7 +150,7 @@ export function ProjectSiteForm({
             </Button>
             <Button
               type="submit"
-              disabled={!name || !description || currentPolygon.length < 3}
+              disabled={!name || !description || !currentPolygon || currentPolygon.length < 3}
             >
               Create Site
             </Button>
