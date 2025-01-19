@@ -1,36 +1,127 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Weather Map
+
+An interactive weather visualization application built with Next.js and Mapbox GL JS. The application provides real-time weather data for any location on the map with a beautiful, modern interface.
+
+## Features
+
+- 🗺️ Interactive map powered by Mapbox GL JS
+- 🌡️ Real-time weather data from OpenWeather API
+- 🔍 Location search with auto-geocoding
+- 💫 Smooth animations and transitions
+- 🎨 Modern UI with glassmorphism effects
+- 📱 Fully responsive design
+- ⚡ Server-side API route handling
+- 🌓 Dark/Light mode support
+
+## Weather Data Display
+
+- Temperature (current and feels like)
+- Wind speed and gusts
+- Sunrise and sunset times
+- Humidity and pressure
+- Visibility and cloud cover
+- Detailed weather conditions
+- Wikipedia links for locations
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18.0 or later
+- npm or yarn package manager
+- Mapbox API token
+- OpenWeather API key
+
+### Environment Variables
+
+Create a `.env.local` file in the root directory with the following variables:
+
+```bash
+NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_token_here
+OPENWEATHER_API_KEY=your_openweather_api_key_here
+```
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/weather-map.git
+cd weather-map
+```
+
+2. Install dependencies:
+```bash
+npm install
+# or
+yarn install
+```
+
+3. Start the development server:
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Tech Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Framework**: Next.js 15.1
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Map**: Mapbox GL JS
+- **Weather Data**: OpenWeather API
+- **State Management**: React Hooks
+- **Build Tool**: Turbopack
+- **Deployment**: Vercel
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+├── app/
+│   ├── api/           # API routes for weather and geocoding
+│   ├── globals.css    # Global styles and Tailwind imports
+│   ├── layout.tsx     # Root layout component
+│   └── page.tsx       # Home page component
+├── components/
+│   ├── Map.tsx       # Main map component
+│   └── LoadingScreen.tsx # Loading animation component
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Development
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Uses ESLint for code linting
+- TypeScript for type safety
+- Prettier for code formatting
+- Hot reloading with Turbopack
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The application is optimized for deployment on Vercel:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run build
+# or
+yarn build
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/) for the mapping platform
+- [OpenWeather API](https://openweathermap.org/api) for weather data
+- [Next.js](https://nextjs.org/) for the React framework
+- [Tailwind CSS](https://tailwindcss.com/) for styling

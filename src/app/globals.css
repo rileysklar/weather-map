@@ -2,6 +2,53 @@
 @tailwind components;
 @tailwind utilities;
 
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.mapboxgl-map {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+body {
+  position: relative;
+}
+
+.fire-marker {
+  transition: transform 0.2s;
+}
+
+.fire-marker:hover {
+  transform: scale(1.2);
+}
+
+.mapboxgl-popup {
+  max-width: 300px !important;
+}
+
+.mapboxgl-popup-content {
+  padding: 0 !important;
+  border-radius: 8px !important;
+  background: rgba(0, 0, 0, 0.25) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  color: white !important;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -18,4 +65,76 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.mapboxgl-ctrl-attrib-inner {
+  display: none;
+}
+.mapboxgl-popup-close-button {
+  height: 24px;
+  width: 24px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mapboxgl-ctrl.mapboxgl-ctrl-attrib.mapboxgl-compact {
+  display: none;
+}
+
+details > summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+details > summary::after {
+  content: '▼';
+  font-size: 0.8em;
+  transition: transform 0.2s;
+}
+
+details[open] > summary::after {
+  transform: rotate(180deg);
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.container {
+	position: relative;
+	height: 100vh;
+}
+.center {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
+.logo {
+ fill: #ff5e00;
+}
+.logo-back {
+ fill: rgba( #ff5e00y, .08 )
+}
+.clip {
+	animation: slide 9s infinite;
+}
+ @keyframes slide {
+ from {
+ transform: translateY(-180px);
+}
+ 45% {
+ transform: translateY(0px);
+}
+ 55% {
+ transform: translateY(0px);
+}
+to {
+	transform: translateY(-180px);
+}
 }
