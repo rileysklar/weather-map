@@ -14,6 +14,21 @@ export const glassStyles = {
     blur: 'backdrop-blur-lg',
     shadow: 'shadow-xl shadow-black/10',
     hover: 'hover:bg-black/30',
+  },
+  sheet: {
+    background: 'bg-black/20',
+    border: 'border-r border-white/10',
+    divider: 'border-white/10',
+    blur: 'backdrop-blur-lg',
+    shadow: 'shadow-xl shadow-black/10',
+  },
+  input: {
+    background: 'bg-black/25',
+    border: 'border border-white/20',
+    blur: 'backdrop-blur-md',
+    text: 'text-white placeholder:text-white/50',
+    focus: 'focus:ring-2 focus:ring-blue-500 focus:outline-none',
+    hover: 'hover:bg-black/30',
   }
 } as const;
 
@@ -21,4 +36,6 @@ export const glassClassName = `${glassStyles.background} ${glassStyles.border} $
 
 export const glassCardClassName = `${glassStyles.card.background} ${glassStyles.card.border} ${glassStyles.card.blur} ${glassStyles.text} ${glassStyles.card.shadow}`;
 
-export const glassInputClassName = `${glassClassName} ${glassStyles.focus} ${glassStyles.hover} ${glassStyles.disabled}`; 
+export const glassInputClassName = `${glassStyles.input.background} ${glassStyles.input.border} ${glassStyles.input.blur} ${glassStyles.input.text} ${glassStyles.input.focus} ${glassStyles.input.hover}`;
+
+export const glassSheetClassName = `${glassStyles.sheet.background} ${glassStyles.sheet.border} ${glassStyles.sheet.blur} ${glassStyles.text} ${glassStyles.sheet.shadow}`; 

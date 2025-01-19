@@ -7,6 +7,8 @@ import "../app/globals.css"
 import LoadingScreen from './LoadingScreen';
 import ProjectSiteForm from './ProjectSiteForm';
 import { projectSitesService } from '@/services/projectSites';
+import { Sidebar } from './Sidebar';
+import { ProjectSitesList } from './ProjectSitesList';
 
 if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
   throw new Error('Mapbox token is required');
@@ -32,6 +34,8 @@ export default function Map() {
   const [isProjectMode, setIsProjectMode] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentPolygon, setCurrentPolygon] = useState<Array<{ id: string; coordinates: number[]; index: number }>>([]);
+  const [projectSites, setProjectSites] = useState<any[]>([]);
+  const [isLoadingSites, setIsLoadingSites] = useState(true);
 
   // Update refs when states change
   useEffect(() => {
@@ -171,30 +175,32 @@ export default function Map() {
   };
 
   // Handle search
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!mapInstance || !searchValue.trim() || isLoading) return;
+  const handleSearch = async (searchQuery: string) => {
+    if (!mapInstance || !searchQuery.trim()) return;
 
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await fetch(`/api/geocode?q=${encodeURIComponent(searchValue)}`);
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+          searchQuery
+        )}.json?access_token=${mapboxgl.accessToken}&types=place,region,country`
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to find location');
+        throw new Error('Failed to fetch location data');
       }
 
       const data = await response.json();
-      
-      if (data.length === 0) {
-        setError('Location not found');
+      if (!data.features || data.features.length === 0) {
+        setError('No results found');
         return;
       }
 
-      const { lat, lon: lng, name } = data[0];
-      
-      // Fly to location
+      const [lng, lat] = data.features[0].center;
+      const locationName = data.features[0].place_name;
+
       mapInstance.flyTo({
         center: [lng, lat],
         zoom: 10,
@@ -204,15 +210,81 @@ export default function Map() {
 
       // Show weather popup after flying
       setTimeout(() => {
-        showWeatherPopup(lat, lng, name);
+        showWeatherPopup(lat, lng, locationName);
       }, 2000);
 
       setSearchValue('');
     } catch (err) {
-      setError('Error searching for location');
       console.error('Search error:', err);
+      setError('Error searching for location');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Load project sites function
+  const loadProjectSites = async () => {
+    try {
+      const sites = await projectSitesService.getAll();
+      setProjectSites(sites);
+      
+      // Add sites to map if it exists
+      if (!mapInstance) return;
+      
+      sites.forEach((site) => {
+        const sourceId = `project-site-${site.id}`;
+        
+        // Remove existing layers and source if they exist
+        if (mapInstance.getLayer(`${sourceId}-fill`)) {
+          mapInstance.removeLayer(`${sourceId}-fill`);
+        }
+        if (mapInstance.getLayer(`${sourceId}-outline`)) {
+          mapInstance.removeLayer(`${sourceId}-outline`);
+        }
+        if (mapInstance.getSource(sourceId)) {
+          mapInstance.removeSource(sourceId);
+        }
+
+        // Add source and layers
+        mapInstance.addSource(sourceId, {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            geometry: site.polygon,
+            properties: {
+              id: site.id,
+              name: site.name,
+              description: site.description
+            }
+          }
+        });
+
+        // Add fill layer
+        mapInstance.addLayer({
+          id: `${sourceId}-fill`,
+          type: 'fill',
+          source: sourceId,
+          paint: {
+            'fill-color': '#3b82f6',
+            'fill-opacity': 0.2
+          }
+        });
+
+        // Add outline layer
+        mapInstance.addLayer({
+          id: `${sourceId}-outline`,
+          type: 'line',
+          source: sourceId,
+          paint: {
+            'line-color': '#3b82f6',
+            'line-width': 2
+          }
+        });
+      });
+    } catch (error) {
+      console.error('Error loading project sites:', error);
+    } finally {
+      setIsLoadingSites(false);
     }
   };
 
@@ -232,7 +304,7 @@ export default function Map() {
       }
 
       // Create the project site in the database
-      await projectSitesService.create({
+      const newSite = await projectSitesService.create({
         name: data.name,
         description: data.description,
         polygon: {
@@ -241,15 +313,14 @@ export default function Map() {
         }
       });
 
-      // Show success message (you might want to add a toast notification here)
-      console.log('Project site created successfully!');
-
       // Reset the map state
       handleProjectCancel();
 
-      // Optionally, you could add a success callback to refresh the project sites list
-      // if you're displaying them on the map
-      // await loadProjectSites();
+      // Reload project sites to update the map and sidebar
+      await loadProjectSites();
+
+      // Fly to the new site
+      handleProjectSiteClick(newSite);
 
     } catch (err) {
       console.error('Error creating project site:', err);
@@ -490,6 +561,32 @@ export default function Map() {
     if (mapInstance.getSource('polygon')) mapInstance.removeSource('polygon');
   };
 
+  // Handle project site click
+  const handleProjectSiteClick = (site: any) => {
+    if (!mapInstance) return;
+
+    // Close any open popups
+    if (popupRef.current) {
+      popupRef.current.remove();
+      popupRef.current = null;
+    }
+
+    // Calculate the bounds of the polygon
+    const coordinates = site.polygon.coordinates[0];
+    const bounds = coordinates.reduce(
+      (bounds: mapboxgl.LngLatBounds, coord: number[]) => {
+        return bounds.extend(coord as [number, number]);
+      },
+      new mapboxgl.LngLatBounds(coordinates[0], coordinates[0])
+    );
+
+    // Fly to the bounds
+    mapInstance.fitBounds(bounds, {
+      padding: 50,
+      duration: 2000
+    });
+  };
+
   // Initialize map
   useEffect(() => {
     if (!mapContainer.current || mapInstance) return;
@@ -509,13 +606,15 @@ export default function Map() {
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
     map.on('load', () => {
+      mapInstance = map;
+      // Load project sites after map is initialized
+      loadProjectSites();
+      
       // Ensure loading screen shows for at least 3 seconds
       setTimeout(() => {
         setIsMapLoaded(true);
       }, 3000);
     });
-
-    mapInstance = map;
 
     return () => {
       if (popupRef.current) {
@@ -526,69 +625,33 @@ export default function Map() {
     };
   }, []); // Empty dependency array
 
+  // Load initial project sites
+  useEffect(() => {
+    if (mapInstance && isMapLoaded) {
+      loadProjectSites();
+    }
+  }, [isMapLoaded]);
+
   return (
     <>
       {!isMapLoaded && <LoadingScreen />}
       <div className="fixed inset-0 w-full h-full">
-        {/* Search bar - Only show in weather mode */}
-        {!projectModeRef.current && (
-          <div className="absolute top-4 right-12 z-10 w-80 md:w-[32rem] lg:w-[40rem]">
-            <form onSubmit={handleSearch} className="relative">
-              <input
-                type="text"
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleSearch(e as any);
-                  }
-                }}
-                placeholder="Search for a location..."
-                className="w-full px-4 py-2 md:py-3 lg:py-4 text-base md:text-lg rounded-lg bg-black/25 backdrop-blur-md border border-white/20 text-white placeholder:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-stone-800 hover:text-blue-500 disabled:text-stone-400"
-              >
-                {isLoading ? '⏳' : '🔍'}
-              </button>
-            </form>
-            {error && (
-              <div className="mt-2 px-3 py-2 bg-red-100/80 backdrop-blur-md text-red-700 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Project site form */}
-        {projectModeRef.current && (
-          <div className="absolute top-4 right-4 z-10">
-            <ProjectSiteForm
-              isDrawing={isDrawing}
-              currentPolygon={currentPolygon}
-              onSubmit={handleProjectSiteSubmit}
-              onCancel={handleProjectCancel}
-            />
-          </div>
-        )}
-
-        {/* Mode toggle button */}
-        <div className="absolute bottom-4 right-4 z-10">
-          <button
-            onClick={handleProjectModeToggle}
-            className={`px-4 py-2 backdrop-blur-md border border-white/20 text-white rounded-lg transition-colors ${
-              projectModeRef.current 
-                ? 'bg-blue-500/50 hover:bg-blue-500/60' 
-                : 'bg-black/25 hover:bg-black/40'
-            }`}
-          >
-            {projectModeRef.current ? 'Cancel Project Site' : 'Create Project Site'}
-          </button>
-        </div>
-
+        <Sidebar
+          searchValue={searchValue}
+          onSearchChange={setSearchValue}
+          onSearch={handleSearch}
+          isLoading={isLoading}
+          error={error}
+          isProjectMode={isProjectMode}
+          isDrawing={isDrawing}
+          currentPolygon={currentPolygon}
+          onProjectModeToggle={handleProjectModeToggle}
+          onProjectSiteSubmit={handleProjectSiteSubmit}
+          onProjectCancel={handleProjectCancel}
+          projectSites={projectSites}
+          isLoadingSites={isLoadingSites}
+          onProjectSiteClick={handleProjectSiteClick}
+        />
         <div ref={mapContainer} className="w-full h-full" style={{ position: 'absolute' }} />
       </div>
     </>

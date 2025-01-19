@@ -16,45 +16,33 @@ interface CreateProjectSite {
   polygon: GeometryObject;
 }
 
-class ProjectSitesService {
+export const projectSitesService = {
   async create(data: CreateProjectSite): Promise<ProjectSite> {
-    const { data: newSite, error } = await supabase
+    const { data: projectSite, error } = await supabase
       .from('project_sites')
-      .insert([{
-        name: data.name,
-        description: data.description,
-        polygon: data.polygon,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }])
-      .select('*')
+      .insert([data])
+      .select()
       .single();
 
     if (error) {
-      console.error('Error creating project site:', error);
-      throw error;
+      throw new Error(error.message);
     }
 
-    if (!newSite) {
-      throw new Error('No data returned from insert');
-    }
-
-    return newSite;
-  }
+    return projectSite;
+  },
 
   async getAll(): Promise<ProjectSite[]> {
-    const { data, error } = await supabase
+    const { data: projectSites, error } = await supabase
       .from('project_sites')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching project sites:', error);
-      throw error;
+      throw new Error(error.message);
     }
 
-    return data || [];
-  }
+    return projectSites;
+  },
 
   async getById(id: string): Promise<ProjectSite | null> {
     const { data, error } = await supabase
@@ -69,7 +57,7 @@ class ProjectSitesService {
     }
 
     return data;
-  }
+  },
 
   async update(id: string, site: Partial<Omit<ProjectSite, 'id' | 'created_at' | 'updated_at'>>): Promise<ProjectSite> {
     const { data, error } = await supabase
@@ -89,7 +77,7 @@ class ProjectSitesService {
     }
 
     return data;
-  }
+  },
 
   async delete(id: string): Promise<void> {
     const { error } = await supabase
@@ -102,6 +90,4 @@ class ProjectSitesService {
       throw error;
     }
   }
-}
-
-export const projectSitesService = new ProjectSitesService(); 
+}; 

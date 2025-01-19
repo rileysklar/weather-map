@@ -12,6 +12,9 @@ export default {
         background: "var(--background)",
         foreground: "var(--foreground)",
       },
+      fontFamily: {
+        'black-ops-one': ['var(--font-black-ops-one)'],
+      },
     },
   },
   plugins: [],

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { X } from 'lucide-react';
+import { glassClassName, glassCardClassName, glassInputClassName } from '@/components/ui/styles';
 
 interface ProjectSiteFormProps {
   isDrawing: boolean;
@@ -79,62 +80,65 @@ export default function ProjectSiteForm({
   };
 
   return (
-    <Card className="w-96 backdrop-blur-sm border-white/20">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-xl font-bold">New Project Site</CardTitle>
+    <Card className="w-full backdrop-blur-sm border-white/20">
+      <CardHeader className="flex flex-col  space-y-0 pb-2">
+        <div className='flex flex-row justify-between'><CardTitle className="text-xl font-bold">New Project Site</CardTitle>
         <Button
           variant="ghost"
           size="icon"
           onClick={onCancel}
-          className="h-8 w-8 p-0"
+          className="h-8 w-8 p-0 text-white hover:bg-white/10"
         >
           <X className="h-4 w-4" />
         </Button>
+        </div>
+         <div className="pt-2">
+            {isDrawing ? (
+              <p className="text-sm text-blue-400">
+                Click on the map to draw a polygon. Click the first point to close the shape.
+              </p>
+            ) : currentPolygon && currentPolygon.length > 0 ? (
+              <p className="text-sm text-green-400">
+                ✓ Polygon drawn with {currentPolygon.length} points
+              </p>
+            ) : (
+              <p className="text-sm text-white/70">
+                Click "Start Drawing" to begin creating your polygon
+              </p>
+            )}
+          </div>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Site Name</Label>
+            <Label htmlFor="name" className="text-white">Site Name</Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter site name"
+              className={glassInputClassName}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description" className="text-white">Description</Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Enter site description"
-              className="min-h-[100px]"
+              className={`min-h-[100px] ${glassInputClassName}`}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label>Polygon Points</Label>
-            <div className="max-h-[200px] overflow-y-auto rounded-md border border-gray-200 bg-white/50">
+            <Label className="text-white">Polygon Points</Label>
+            <div className={`max-h-[200px] overflow-y-auto rounded-md ${glassCardClassName}`}>
               {renderCoordinatesTable()}
             </div>
           </div>
-          <div className="pt-2">
-            {isDrawing ? (
-              <p className="text-sm text-blue-600">
-                Click on the map to draw a polygon. Click the first point to close the shape.
-              </p>
-            ) : currentPolygon && currentPolygon.length > 0 ? (
-              <p className="text-sm text-green-600">
-                ✓ Polygon drawn with {currentPolygon.length} points
-              </p>
-            ) : (
-              <p className="text-sm text-stone-600">
-                Click "Start Drawing" to begin creating your polygon
-              </p>
-            )}
-          </div>
+         
           {error && (
             <div className="text-red-400 text-sm">
               {error}
@@ -145,12 +149,14 @@ export default function ProjectSiteForm({
               type="button"
               variant="outline"
               onClick={onCancel}
+              className={`${glassClassName} hover:bg-white/10`}
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={!name || !description || !currentPolygon || currentPolygon.length < 3}
+              className="bg-blue-500/50 hover:bg-blue-500/60 text-white"
             >
               Create Site
             </Button>

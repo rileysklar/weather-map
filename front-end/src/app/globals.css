@@ -138,3 +138,9 @@ to {
 	transform: translateY(-180px);
 }
 }
+
+@layer utilities {
+  .font-black-ops-one {
+    font-family: var(--font-black-ops-one);
+  }
+}
