@@ -70,7 +70,7 @@ export function Sidebar({
       <SheetPortal>
         <SheetContent side="left" className="w-[400px] sm:w-[540px] p-0">
           <SheetHeader className="p-6 border-b border-white/20">
-            <SheetTitle className="text-white font-black-ops-one">MapShield Settings</SheetTitle>
+            <SheetTitle className="text-white font-black-ops-one">🛡️MapShield</SheetTitle>
           </SheetHeader>
           <div className="flex flex-col gap-6 p-6">
             {!isProjectMode && (

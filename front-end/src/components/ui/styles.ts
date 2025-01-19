@@ -23,12 +23,12 @@ export const glassStyles = {
     shadow: 'shadow-xl shadow-black/10',
   },
   input: {
-    background: 'bg-black/25',
-    border: 'border border-white/20',
-    blur: 'backdrop-blur-md',
-    text: 'text-white placeholder:text-white/50',
+    background: 'bg-white',
+    border: 'border border-slate-200',
+    blur: '',
+    text: 'text-slate-900 placeholder:text-slate-500',
     focus: 'focus:ring-2 focus:ring-blue-500 focus:outline-none',
-    hover: 'hover:bg-black/30',
+    hover: 'hover:bg-white/90',
   }
 } as const;
 

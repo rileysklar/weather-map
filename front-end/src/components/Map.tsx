@@ -595,9 +595,9 @@ export default function Map() {
       container: mapContainer.current,
       style: 'mapbox://styles/rileysklar1/cm6374obn005d01s6eas16xay',
       center: [-97.7431, 30.2672], // Center on Austin, TX
-      zoom: 4,
+      zoom: 9,
       minZoom: 3,
-      maxZoom: 15,
+      maxZoom: 20,
       preserveDrawingBuffer: true
     });
 
