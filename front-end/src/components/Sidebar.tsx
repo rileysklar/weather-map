@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Menu } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ChevronRight } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-  SheetOverlay,
   SheetPortal,
 } from '@/components/ui/sheet';
 import { SearchBar } from './SearchBar';
@@ -59,24 +57,43 @@ export function Sidebar({
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button
-          variant="outline"
-          size="icon"
-          className="fixed left-4 top-4 z-50 bg-black/25 backdrop-blur-md border-white/20 text-white hover:bg-black/40"
+        <button 
+          className={`fixed left-4 top-4 z-50 bg-[#4285F4] backdrop-blur-md border border-white/20 text-white hover:bg-[#3367D6] px-4 py-2 rounded-lg font-black-ops-one text-xl transition-all duration-500 hover:scale-105 flex items-center gap-2 group ${
+            isOpen ? 'opacity-0' : 'opacity-100'
+          }`}
         >
-          <Menu className="h-6 w-6" />
-        </Button>
+          🛡️MapShield
+          <ChevronRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+        </button>
       </SheetTrigger>
       <SheetPortal>
-        <SheetContent side="left" className="w-[400px] sm:w-[540px] p-0">
+        <SheetContent side="left" className="w-[400px] sm:w-[540px] p-0 [&>button]:hidden">
           <SheetHeader className="p-6 border-b border-white/20">
-            <SheetTitle className="text-white font-black-ops-one">🛡️MapShield</SheetTitle>
+            <div 
+              className={`transition-all duration-500 ${
+                isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
+              }`}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-end',
+                width: '100%',
+                justifyContent: 'space-between'
+              }}
+            >
+              <SheetTitle 
+                className="text-white font-black-ops-one text-xl flex items-center gap-2 cursor-pointer hover:opacity-80"
+                onClick={() => setIsOpen(false)}
+              >
+                🛡️MapShield
+                <ChevronRight className="w-5 h-5 -rotate-90" />
+              </SheetTitle>
+            </div>
           </SheetHeader>
           <div className="flex flex-col gap-6 p-6">
             {!isProjectMode && (
               <>
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-white">Search Location</h3>
+                  {/* <h3 className="text-lg font-semibold text-white">Search Location</h3> */}
                   <SearchBar
                     value={searchValue}
                     onChange={onSearchChange}
@@ -103,16 +120,12 @@ export function Sidebar({
             ) : null}
 
             <div className="mt-auto pt-6 border-t border-white/20">
-              <Button
+              <button
                 onClick={onProjectModeToggle}
-                className={`w-full ${
-                  isProjectMode
-                    ? 'bg-blue-500/50 hover:bg-blue-500/60'
-                    : 'bg-black/25 hover:bg-black/40'
-                } backdrop-blur-md border border-white/20 text-white`}
+                className={`w-full bg-[#4285F4] hover:bg-[#3367D6] backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-lg transition-colors duration-200`}
               >
-                {isProjectMode ? 'Cancel Project Site' : 'Create Project Site'}
-              </Button>
+                {isProjectMode ? 'Cancel Project Site' : 'New Project Site'}
+              </button>
             </div>
           </div>
         </SheetContent>

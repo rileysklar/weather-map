@@ -9,6 +9,8 @@ import ProjectSiteForm from './ProjectSiteForm';
 import { projectSitesService } from '@/services/projectSites';
 import { Sidebar } from './Sidebar';
 import { ProjectSitesList } from './ProjectSitesList';
+import { WeatherPopup } from './WeatherPopup';
+import { createRoot } from 'react-dom/client';
 
 if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
   throw new Error('Mapbox token is required');
@@ -66,10 +68,15 @@ export default function Map() {
         offset: 15
       });
 
+      // Create a temporary loading div
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'p-4 text-white';
+      loadingDiv.textContent = 'Loading...';
+
       // Show loading state
       popupRef.current
         .setLngLat([lng, lat])
-        .setHTML('<div class="p-4 text-white">⏳ Loading weather data...</div>')
+        .setDOMContent(loadingDiv)
         .addTo(mapInstance);
 
       // Fetch weather data
@@ -81,95 +88,29 @@ export default function Map() {
       
       const weatherData = await response.json();
 
-      // Update popup with weather data
-      const formatTime = (timestamp: number) => {
-        const date = new Date(timestamp * 1000);
-        return date.toLocaleTimeString('en-US', { 
-          hour: 'numeric', 
-          minute: '2-digit',
-          hour12: true 
-        });
-      };
+      // Create container for React component
+      const container = document.createElement('div');
+      const root = createRoot(container);
 
-      const html = `
-        <div class="p-6 text-white">
-          <h3 class="font-bold text-xl text-white border-b border-white/20 pb-2 flex items-center justify-between">
-            <span>${locationName || weatherData.name || 'Location'}, ${weatherData.sys.country}</span>
-            <a href="https://en.wikipedia.org/wiki/${encodeURIComponent(locationName || weatherData.name)}${weatherData.name.includes(',') ? '_' + weatherData.name.split(',')[1].trim() : ''}" 
-               target="_blank" 
-               rel="noopener noreferrer" 
-               class="text-blue-300 hover:text-blue-400 text-sm ml-2 flex items-center gap-1"
-               title="View on Wikipedia">
-              Wiki <svg class="w-3 h-3 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-            </a>
-          </h3>
-          <table class="w-full">
-            <tbody class="divide-y divide-white/20">
-              <tr>
-                <td class="py-3 font-medium">Lat/Lon</td>
-                <td class="py-3 text-right">${weatherData.coord.lat.toFixed(4)}°N, ${weatherData.coord.lon.toFixed(4)}°W</td>
-              </tr>
-              <tr>
-                <td class="py-3 font-medium">Sunrise</td>
-                <td class="py-3 text-right">${formatTime(weatherData.sys.sunrise)}</td>
-              </tr>
-              <tr>
-                <td class="py-3 font-medium">Sunset</td>
-                <td class="py-3 text-right">${formatTime(weatherData.sys.sunset)}</td>
-              </tr>
-              <tr>
-                <td class="py-3 font-medium">Temperature</td>
-                <td class="py-3 text-right">${Math.round(weatherData.main.temp)}°F (Feels like ${Math.round(weatherData.main.feels_like)}°F)</td>
-              </tr>
-              <tr>
-                <td class="py-3 font-medium">Wind</td>
-                <td class="py-3 text-right">${Math.round(weatherData.wind.speed)} mph ${weatherData.wind.gust ? `(Gusts ${Math.round(weatherData.wind.gust)} mph)` : ''}</td>
-              </tr>
-              <tr>
-                <td colspan="2" class="py-3">
-                  <details class="cursor-pointer">
-                    <summary class="font-medium hover:text-blue-300">Detailed Conditions</summary>
-                    <div class="mt-2 space-y-2 pl-4 border-l border-white/20">
-                      <div class="flex justify-between">
-                        <span>Humidity</span>
-                        <span>${weatherData.main.humidity}%</span>
-                      </div>
-                      <div class="flex justify-between">
-                        <span>Pressure</span>
-                        <span>${weatherData.main.pressure} hPa</span>
-                      </div>
-                      <div class="flex justify-between">
-                        <span>Visibility</span>
-                        <span>${(weatherData.visibility / 1000).toFixed(1)} km</span>
-                      </div>
-                      <div class="flex justify-between">
-                        <span>Cloud Cover</span>
-                        <span>${weatherData.clouds.all}%</span>
-                      </div>
-                      <div class="flex justify-between">
-                        <span>Conditions</span>
-                        <span>${weatherData.weather[0].description.replace(/\b\w/g, (char: string) => char.toUpperCase())}</span>
-                      </div>
-                    </div>
-                  </details>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      `;
+      // Render WeatherPopup component
+      root.render(
+        <WeatherPopup 
+          weatherData={weatherData}
+          locationName={locationName}
+        />
+      );
 
+      // Update popup content
       if (popupRef.current) {
-        popupRef.current.setHTML(html);
+        popupRef.current.setDOMContent(container);
       }
     } catch (error) {
       console.error('❌ Error fetching weather:', error);
       if (popupRef.current) {
-        popupRef.current.setHTML(`
-          <div class="p-4">
-            <p class="text-white">⚠️ Weather data unavailable</p>
-          </div>
-        `);
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'p-4';
+        errorDiv.innerHTML = '<p class="text-white">⚠️ Weather data unavailable</p>';
+        popupRef.current.setDOMContent(errorDiv);
       }
     }
   };
@@ -631,6 +572,30 @@ export default function Map() {
       loadProjectSites();
     }
   }, [isMapLoaded]);
+
+  // Update map cursor based on mode
+  useEffect(() => {
+    if (!mapContainer.current) return;
+    
+    // Remove existing classes first
+    mapContainer.current.classList.remove('map-weather-mode', 'map-drawing-mode');
+    
+    // Add appropriate class based on mode
+    if (isProjectMode && isDrawing) {
+      mapContainer.current.classList.add('map-drawing-mode');
+    } else if (!isProjectMode) {
+      mapContainer.current.classList.add('map-weather-mode');
+    }
+  }, [isProjectMode, isDrawing]);
+
+  // Cleanup cursor classes on unmount
+  useEffect(() => {
+    return () => {
+      if (mapContainer.current) {
+        mapContainer.current.classList.remove('map-weather-mode', 'map-drawing-mode');
+      }
+    };
+  }, []);
 
   return (
     <>

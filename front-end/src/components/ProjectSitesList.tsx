@@ -36,6 +36,7 @@ export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading }
   const [deletingSiteId, setDeletingSiteId] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [siteToDelete, setSiteToDelete] = useState<ProjectSite | null>(null);
+  const [isListVisible, setIsListVisible] = useState(true);
 
   const handleDeleteClick = (site: ProjectSite, event: React.MouseEvent) => {
     event.stopPropagation();
@@ -68,7 +69,10 @@ export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading }
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-white">Project Sites</h3>
+        <div className="flex items-center justify-between text-lg font-semibold text-white border-b border-white/20 pb-2 cursor-pointer hover:text-white/80" onClick={() => setIsListVisible(!isListVisible)}>
+          <span>Project Sites</span>
+          <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isListVisible ? 'rotate-180' : ''}`} />
+        </div>
         <div className="text-white/60">Loading sites...</div>
       </div>
     );
@@ -77,7 +81,10 @@ export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading }
   if (sites.length === 0) {
     return (
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-white">Project Sites</h3>
+        <div className="flex items-center justify-between text-lg font-semibold text-white border-b border-white/20 pb-2 cursor-pointer hover:text-white/80" onClick={() => setIsListVisible(!isListVisible)}>
+          <span>Project Sites</span>
+          <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isListVisible ? 'rotate-180' : ''}`} />
+        </div>
         <div className="text-white/60">No project sites created yet.</div>
       </div>
     );
@@ -96,63 +103,68 @@ export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading }
   return (
     <>
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-white">Project Sites</h3>
-        <div className="space-y-2">
-          {sites.map((site) => (
-            <div key={site.id} className="rounded-lg overflow-hidden">
-              <div
-                className="w-full flex justify-between items-center text-white h-auto p-2 hover:bg-white/10 rounded-md cursor-pointer"
-                onClick={() => onSiteClick(site)}
-              >
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  <span className="font-medium">{site.name}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 p-1 text-white hover:bg-white/20"
-                    onClick={(e) => toggleExpand(site.id, e)}
-                  >
-                    {expandedSiteId === site.id ? (
-                      <ChevronUp className="h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4" />
-                    )}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 p-1 text-red-400 hover:bg-red-500/20 hover:text-red-300"
-                    onClick={(e) => handleDeleteClick(site, e)}
-                    disabled={deletingSiteId === site.id}
-                  >
-                    {deletingSiteId === site.id ? (
-                      <div className="h-4 w-4 border-2 border-t-transparent border-red-400 rounded-full animate-spin" />
-                    ) : (
-                      <Trash2 className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-              {expandedSiteId === site.id && (
-                <div className="px-4 py-3 bg-white/5 border-t border-white/10">
-                  <div className="space-y-2 text-sm text-white/80">
-                    <p className="text-white/60">Description:</p>
-                    <p className="pl-2">{site.description || 'No description provided'}</p>
-                    <p className="text-white/60 mt-2">Created:</p>
-                    <p className="pl-2">{formatDate(site.created_at)}</p>
-                    <p className="text-white/60 mt-2">Coordinates:</p>
-                    <p className="pl-2 font-mono text-xs">
-                      Center: {site.polygon.coordinates[0][0][0].toFixed(4)}, {site.polygon.coordinates[0][0][1].toFixed(4)}
-                    </p>
+        <div className={`flex items-center justify-between text-lg font-semibold text-white pb-2 cursor-pointer hover:text-white/80 ${isListVisible ? 'border-b border-white/20' : ''}`} onClick={() => setIsListVisible(!isListVisible)}>
+          <span>My Project Sites</span>
+          <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isListVisible ? 'rotate-180' : ''}`} />
+        </div>
+        {isListVisible && (
+          <div className="space-y-2">
+            {sites.map((site) => (
+              <div key={site.id} className="rounded-lg overflow-hidden">
+                <div
+                  className="w-full flex justify-between items-center text-white h-auto p-2 hover:bg-white/10 rounded-md cursor-pointer"
+                  onClick={() => onSiteClick(site)}
+                >
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    <span className="font-medium">{site.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 p-1 text-white hover:bg-white/20"
+                      onClick={(e) => toggleExpand(site.id, e)}
+                    >
+                      {expandedSiteId === site.id ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 p-1 text-red-400 hover:bg-red-500/20 hover:text-red-300"
+                      onClick={(e) => handleDeleteClick(site, e)}
+                      disabled={deletingSiteId === site.id}
+                    >
+                      {deletingSiteId === site.id ? (
+                        <div className="h-4 w-4 border-2 border-t-transparent border-red-400 rounded-full animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </Button>
                   </div>
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
+                {expandedSiteId === site.id && (
+                  <div className="px-4 py-3 bg-white/5 border-t border-white/10">
+                    <div className="space-y-2 text-sm text-white/80">
+                      <p className="text-white/60">Description:</p>
+                      <p className="pl-2">{site.description || 'No description provided'}</p>
+                      <p className="text-white/60 mt-2">Created:</p>
+                      <p className="pl-2">{formatDate(site.created_at)}</p>
+                      <p className="text-white/60 mt-2">Coordinates:</p>
+                      <p className="pl-2 font-mono text-xs">
+                        Center: {site.polygon.coordinates[0][0][0].toFixed(4)}, {site.polygon.coordinates[0][0][1].toFixed(4)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

@@ -23,7 +23,7 @@ export function SearchBar({ value, onChange, onSearch, isLoading, error }: Searc
   };
 
   return (
-    <form onSubmit={handleSubmit} className="relative w-full">
+    <form onSubmit={handleSubmit} className="relative w-full border-b border-white/20">
       <Input
         type="text"
         placeholder="Search for a location..."
@@ -34,7 +34,7 @@ export function SearchBar({ value, onChange, onSearch, isLoading, error }: Searc
       <Button
         type="submit"
         disabled={isLoading}
-        className="absolute right-0 top-1/2 -translate-y-1/2 bg-stone-800 hover:bg-black/80 rounded-l-none"
+        className="absolute right-0 top-1/2 -translate-y-1/2 bg-blue-500 hover:bg-blue-600 rounded-l-none"
       >
         <Search className={`h-5 w-5 text-white ${isLoading ? 'animate-spin' : ''}`} />
       </Button>
