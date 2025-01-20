@@ -11,6 +11,7 @@ import {
 import { SearchBar } from './SearchBar';
 import ProjectSiteForm from './ProjectSiteForm';
 import { ProjectSitesList } from './ProjectSitesList';
+import { WeatherAlert } from '@/services/weather';
 
 interface SidebarProps {
   searchValue: string;
@@ -56,6 +57,7 @@ export function Sidebar({
   const [isRiskVisible, setIsRiskVisible] = useState(false);
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
   const [isProjectsVisible, setIsProjectsVisible] = useState(false);
+  const [alerts, setAlerts] = useState<WeatherAlert[]>([]);
 
   // Keep sidebar open when in project mode
   useEffect(() => {
@@ -63,6 +65,42 @@ export function Sidebar({
       onOpenChange(true);
     }
   }, [isProjectMode, onOpenChange]);
+
+  const handleWeatherAlerts = (newAlerts: WeatherAlert[]) => {
+    setAlerts(prevAlerts => {
+      // Create a map of existing alerts using description and type as the key
+      const existingAlerts = new Map(
+        prevAlerts.map(alert => [
+          `${alert.description}-${alert.type}`,
+          alert
+        ])
+      );
+
+      // Add new alerts, replacing existing ones if they have the same description and type
+      newAlerts.forEach(alert => {
+        const key = `${alert.description}-${alert.type}`;
+        // Only update if the alert doesn't exist or if it's from a different site
+        if (!existingAlerts.has(key)) {
+          existingAlerts.set(key, alert);
+        } else {
+          // If we already have this alert type, append the site name if it's different
+          const existingAlert = existingAlerts.get(key)!;
+          if (!existingAlert.site.includes(alert.site)) {
+            existingAlerts.set(key, {
+              ...existingAlert,
+              site: `${existingAlert.site}, ${alert.site}`
+            });
+          }
+        }
+      });
+
+      // Convert back to array and sort by type severity
+      const severityOrder = { Warning: 0, Watch: 1, Advisory: 2, Statement: 3 };
+      return Array.from(existingAlerts.values()).sort((a, b) => 
+        severityOrder[a.type] - severityOrder[b.type]
+      );
+    });
+  };
 
   return (
     <Sheet 
@@ -152,6 +190,7 @@ export function Sidebar({
                         onSiteClick={onProjectSiteClick}
                         isLoading={isLoadingSites}
                         onSiteDelete={onProjectSiteDelete}
+                        onWeatherAlerts={handleWeatherAlerts}
                       />
                     )}
                   </div>
@@ -165,9 +204,9 @@ export function Sidebar({
                       <div className="flex items-center gap-2">
                         <AlertTriangle className="h-5 w-5 text-yellow-500" />
                         <span>Active Alerts</span>
-                        {activeWeatherAlerts > 0 && (
+                        {alerts.length > 0 && (
                           <span className="px-2 py-0.5 text-sm bg-yellow-500/20 text-yellow-500 rounded-full">
-                            {activeWeatherAlerts}
+                            {alerts.length}
                           </span>
                         )}
                       </div>
@@ -175,14 +214,36 @@ export function Sidebar({
                     </div>
                     {isAlertsVisible && (
                       <div className="space-y-2 text-white/80">
-                        <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                          <p className="font-medium text-yellow-500">Severe Thunderstorm Warning</p>
-                          <p className="text-sm mt-1">Active for 2 project sites in Austin area</p>
-                        </div>
-                        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                          <p className="font-medium text-red-500">Flash Flood Watch</p>
-                          <p className="text-sm mt-1">Active for 1 project site in Houston area</p>
-                        </div>
+                        {alerts.length === 0 ? (
+                          <div className="text-white/60 text-sm">No active weather alerts.</div>
+                        ) : (
+                          alerts.map((alert, index) => (
+                            <div
+                              key={`${alert.site}-${alert.phenomenon}-${alert.type}-${index}`}
+                              className={`p-3 rounded-lg ${
+                                alert.type === 'Warning' ? 'bg-red-500/20 border border-red-500/40' :
+                                alert.type === 'Watch' ? 'bg-orange-500/20 border border-orange-500/40' :
+                                alert.type === 'Advisory' ? 'bg-yellow-500/20 border border-yellow-500/40' :
+                                'bg-blue-500/20 border border-blue-500/40'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <div className="text-white font-medium">{alert.description}</div>
+                                  <div className="text-white/80 text-sm">{alert.site}</div>
+                                </div>
+                                <span className={`text-xs px-2 py-1 rounded-full ${
+                                  alert.type === 'Warning' ? 'bg-red-500/40 text-red-200' :
+                                  alert.type === 'Watch' ? 'bg-orange-500/40 text-orange-200' :
+                                  alert.type === 'Advisory' ? 'bg-yellow-500/40 text-yellow-200' :
+                                  'bg-blue-500/40 text-blue-200'
+                                }`}>
+                                  {alert.type}
+                                </span>
+                              </div>
+                            </div>
+                          ))
+                        )}
                       </div>
                     )}
                   </div>

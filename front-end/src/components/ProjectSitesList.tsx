@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { MapPin, ChevronDown, ChevronUp, Trash2, Pen, Check } from 'lucide-react';
 import { projectSitesService } from '@/services/projectSites';
+import { weatherService, WeatherAlert } from '@/services/weather';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,9 +32,10 @@ interface ProjectSitesListProps {
   onSiteClick: (site: ProjectSite) => void;
   isLoading: boolean;
   onSiteDelete: (siteId: string) => void;
+  onWeatherAlerts: (alerts: WeatherAlert[]) => void;
 }
 
-export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading, onSiteDelete }: ProjectSitesListProps) {
+export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading, onSiteDelete, onWeatherAlerts }: ProjectSitesListProps) {
   const [sites, setSites] = useState(initialSites);
   const [expandedSiteId, setExpandedSiteId] = useState<string | null>(null);
   const [deletingSiteId, setDeletingSiteId] = useState<string | null>(null);
@@ -99,6 +101,35 @@ export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading, 
     setExpandedSiteId(expandedSiteId === siteId ? null : siteId);
   };
 
+  const handleSiteClick = async (site: ProjectSite) => {
+    try {
+      // Get the first coordinate pair from the polygon (assuming it's the center/main point)
+      const [longitude, latitude] = site.polygon.coordinates[0][0];
+      
+      console.log('Fetching weather data for:', site.name);
+      console.log('Coordinates:', { latitude, longitude });
+      
+      const weatherData = await weatherService.getWeatherData(latitude, longitude, site.name);
+      
+      console.log('Weather Data:', {
+        forecast: weatherData.forecast,
+        gridpoint: weatherData.gridpoint,
+        point: weatherData.point,
+        alerts: weatherData.alerts
+      });
+
+      // Pass alerts to the sidebar
+      onWeatherAlerts(weatherData.alerts);
+      
+      // Still call the original onSiteClick handler
+      onSiteClick(site);
+    } catch (error) {
+      console.error('Error fetching weather data:', error);
+      // Still call the original onSiteClick handler even if weather fetch fails
+      onSiteClick(site);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="text-white/60">Loading sites...</div>
@@ -128,7 +159,7 @@ export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading, 
           <div key={site.id} className="rounded-lg overflow-hidden mr-2">
             <div
               className="w-full flex justify-between items-center text-white h-auto p-2 hover:bg-white/10 rounded-md cursor-pointer"
-              onClick={() => onSiteClick(site)}
+              onClick={() => handleSiteClick(site)}
             >
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <MapPin className="h-4 w-4 shrink-0" />
