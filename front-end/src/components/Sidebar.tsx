@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, AlertTriangle, History, BarChart3, Cloud, ChevronDown, ChevronUp, Building2 } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -51,6 +51,12 @@ export function Sidebar({
   isOpen,
   onOpenChange,
 }: SidebarProps) {
+  const [activeWeatherAlerts, setActiveWeatherAlerts] = useState<number>(2); // Placeholder count
+  const [isAlertsVisible, setIsAlertsVisible] = useState(false);
+  const [isRiskVisible, setIsRiskVisible] = useState(false);
+  const [isHistoryVisible, setIsHistoryVisible] = useState(false);
+  const [isProjectsVisible, setIsProjectsVisible] = useState(false);
+
   // Keep sidebar open when in project mode
   useEffect(() => {
     if (isProjectMode) {
@@ -124,12 +130,130 @@ export function Sidebar({
                       error={error}
                     />
                   </div>
-                  <ProjectSitesList
-                    sites={projectSites}
-                    onSiteClick={onProjectSiteClick}
-                    isLoading={isLoadingSites}
-                    onSiteDelete={onProjectSiteDelete}
-                  />
+
+                  {/* Project Sites Section */}
+                  <div className="space-y-4">
+                    <div 
+                      className={`flex items-center justify-between text-lg font-semibold text-white pb-2 cursor-pointer hover:text-white/80 ${isProjectsVisible ? 'border-b border-white/20' : ''}`}
+                      onClick={() => setIsProjectsVisible(!isProjectsVisible)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-5 w-5 text-emerald-400" />
+                        <span>My Project Sites</span>
+                        <span className="px-2 py-0.5 text-sm bg-emerald-500/20 text-emerald-400 rounded-full">
+                          {projectSites.length}
+                        </span>
+                      </div>
+                      <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isProjectsVisible ? 'rotate-180' : ''}`} />
+                    </div>
+                    {isProjectsVisible && (
+                      <ProjectSitesList
+                        sites={projectSites}
+                        onSiteClick={onProjectSiteClick}
+                        isLoading={isLoadingSites}
+                        onSiteDelete={onProjectSiteDelete}
+                      />
+                    )}
+                  </div>
+
+                  {/* Weather Alerts Section */}
+                  <div className="space-y-4">
+                    <div 
+                      className={`flex items-center justify-between text-lg font-semibold text-white pb-2 cursor-pointer hover:text-white/80 ${isAlertsVisible ? 'border-b border-white/20' : ''}`}
+                      onClick={() => setIsAlertsVisible(!isAlertsVisible)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                        <span>Active Alerts</span>
+                        {activeWeatherAlerts > 0 && (
+                          <span className="px-2 py-0.5 text-sm bg-yellow-500/20 text-yellow-500 rounded-full">
+                            {activeWeatherAlerts}
+                          </span>
+                        )}
+                      </div>
+                      <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isAlertsVisible ? 'rotate-180' : ''}`} />
+                    </div>
+                    {isAlertsVisible && (
+                      <div className="space-y-2 text-white/80">
+                        <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                          <p className="font-medium text-yellow-500">Severe Thunderstorm Warning</p>
+                          <p className="text-sm mt-1">Active for 2 project sites in Austin area</p>
+                        </div>
+                        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                          <p className="font-medium text-red-500">Flash Flood Watch</p>
+                          <p className="text-sm mt-1">Active for 1 project site in Houston area</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Risk Assessment Section */}
+                  <div className="space-y-4">
+                    <div 
+                      className={`flex items-center justify-between text-lg font-semibold text-white pb-2 cursor-pointer hover:text-white/80 ${isRiskVisible ? 'border-b border-white/20' : ''}`}
+                      onClick={() => setIsRiskVisible(!isRiskVisible)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <BarChart3 className="h-5 w-5 text-blue-400" />
+                        <span>Risk Assessment</span>
+                      </div>
+                      <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isRiskVisible ? 'rotate-180' : ''}`} />
+                    </div>
+                    {isRiskVisible && (
+                      <div className="space-y-2 text-white/80">
+                        <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
+                          <div className="flex justify-between items-center">
+                            <p className="font-medium">Flood Risk Index</p>
+                            <span className="text-yellow-500">Moderate</span>
+                          </div>
+                          <div className="mt-2 h-2 bg-white/10 rounded-full overflow-hidden">
+                            <div className="h-full w-[60%] bg-yellow-500 rounded-full" />
+                          </div>
+                        </div>
+                        <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
+                          <div className="flex justify-between items-center">
+                            <p className="font-medium">Wind Damage Risk</p>
+                            <span className="text-green-500">Low</span>
+                          </div>
+                          <div className="mt-2 h-2 bg-white/10 rounded-full overflow-hidden">
+                            <div className="h-full w-[30%] bg-green-500 rounded-full" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Historical Weather Section */}
+                  <div className="space-y-4">
+                    <div 
+                      className={`flex items-center justify-between text-lg font-semibold text-white pb-2 cursor-pointer hover:text-white/80 ${isHistoryVisible ? 'border-b border-white/20' : ''}`}
+                      onClick={() => setIsHistoryVisible(!isHistoryVisible)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <History className="h-5 w-5 text-purple-400" />
+                        <span>Historical Data</span>
+                      </div>
+                      <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isHistoryVisible ? 'rotate-180' : ''}`} />
+                    </div>
+                    {isHistoryVisible && (
+                      <div className="space-y-2 text-white/80">
+                        <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
+                          <p className="font-medium flex items-center gap-2">
+                            <Cloud className="h-4 w-4" />
+                            Precipitation Trends
+                          </p>
+                          <p className="text-sm mt-1">30% above average for May</p>
+                        </div>
+                        <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
+                          <p className="font-medium">Recent Events</p>
+                          <div className="mt-2 text-sm space-y-1">
+                            <p>• Heavy rainfall event (Apr 15)</p>
+                            <p>• High wind advisory (Apr 2)</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
 
