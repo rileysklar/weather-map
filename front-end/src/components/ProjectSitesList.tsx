@@ -175,18 +175,7 @@ export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading, 
                 )}
               </div>
               <div className="flex items-center">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 p-1 text-white hover:bg-white/20"
-                  onClick={(e) => toggleExpand(site.id, e)}
-                >
-                  {expandedSiteId === site.id ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
+                
                 <Button
                   variant="ghost"
                   size="icon"
@@ -214,6 +203,18 @@ export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading, 
                     <div className="h-4 w-4 border-2 border-t-transparent border-red-400 rounded-full animate-spin" />
                   ) : (
                     <Trash2 className="h-4 w-4" />
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 p-1 text-white hover:bg-white/20"
+                  onClick={(e) => toggleExpand(site.id, e)}
+                >
+                  {expandedSiteId === site.id ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
                   )}
                 </Button>
               </div>

@@ -14,15 +14,6 @@ CREATE TABLE IF NOT EXISTS weather_cache (
     CONSTRAINT weather_cache_location_idx UNIQUE (location)
 );
 
--- Create function to update updated_at timestamp
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
 -- Create trigger for updated_at
 CREATE TRIGGER update_weather_cache_updated_at
     BEFORE UPDATE ON weather_cache
