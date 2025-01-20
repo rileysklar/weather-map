@@ -23,7 +23,7 @@ export function SearchBar({ value, onChange, onSearch, isLoading, error }: Searc
   };
 
   return (
-    <form onSubmit={handleSubmit} className="relative w-full border-b border-white/20">
+    <form onSubmit={handleSubmit} className="relative w-full">
       <Input
         type="text"
         placeholder="Search for a location..."

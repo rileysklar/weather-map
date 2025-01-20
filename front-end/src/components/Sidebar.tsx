@@ -27,6 +27,9 @@ interface SidebarProps {
   projectSites: any[];
   isLoadingSites: boolean;
   onProjectSiteClick: (site: any) => void;
+  onProjectSiteDelete: (siteId: string) => void;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 export function Sidebar({
@@ -44,18 +47,28 @@ export function Sidebar({
   projectSites,
   isLoadingSites,
   onProjectSiteClick,
+  onProjectSiteDelete,
+  isOpen,
+  onOpenChange,
 }: SidebarProps) {
-  const [isOpen, setIsOpen] = useState(false);
-
   // Keep sidebar open when in project mode
   useEffect(() => {
     if (isProjectMode) {
-      setIsOpen(true);
+      onOpenChange(true);
     }
-  }, [isProjectMode]);
+  }, [isProjectMode, onOpenChange]);
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+    <Sheet 
+      open={isOpen} 
+      onOpenChange={(open) => {
+        // Only allow closing if not in project mode
+        if (!isProjectMode) {
+          onOpenChange(open);
+        }
+      }}
+      modal={!isProjectMode}
+    >
       <SheetTrigger asChild>
         <button 
           className={`fixed left-4 top-4 z-50 bg-[#4285F4] backdrop-blur-md border border-white/20 text-white hover:bg-[#3367D6] px-4 py-2 rounded-lg font-black-ops-one text-xl transition-all duration-500 hover:scale-105 flex items-center gap-2 group ${
@@ -67,65 +80,76 @@ export function Sidebar({
         </button>
       </SheetTrigger>
       <SheetPortal>
-        <SheetContent side="left" className="w-[400px] sm:w-[540px] p-0 [&>button]:hidden">
-          <SheetHeader className="p-6 border-b border-white/20">
-            <div 
-              className={`transition-all duration-500 ${
-                isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
-              }`}
-              style={{
-                display: 'flex',
-                alignItems: 'flex-end',
-                width: '100%',
-                justifyContent: 'space-between'
-              }}
-            >
-              <SheetTitle 
-                className="text-white font-black-ops-one text-xl flex items-center gap-2 cursor-pointer hover:opacity-80"
-                onClick={() => setIsOpen(false)}
+        <SheetContent 
+          side="left" 
+          className="w-full sm:w-[540px] p-0 [&>button]:hidden"
+          onPointerDownOutside={(e) => {
+            if (isProjectMode) {
+              e.preventDefault();
+            }
+          }}
+        >
+          <div className={`h-full bg-background/80 backdrop-blur-md ${isProjectMode ? 'pointer-events-auto' : ''}`}>
+            <SheetHeader className="p-6 border-b border-white/20">
+              <div 
+                className={`transition-all duration-500 ${
+                  isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
+                }`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  width: '100%',
+                  justifyContent: 'space-between'
+                }}
               >
-                🛡️MapShield
-                <ChevronRight className="w-5 h-5 -rotate-90" />
-              </SheetTitle>
-            </div>
-          </SheetHeader>
-          <div className="flex flex-col gap-6 p-6">
-            {!isProjectMode && (
-              <>
-                <div className="space-y-4">
-                  {/* <h3 className="text-lg font-semibold text-white">Search Location</h3> */}
-                  <SearchBar
-                    value={searchValue}
-                    onChange={onSearchChange}
-                    onSearch={onSearch}
-                    isLoading={isLoading}
-                    error={error}
+                <SheetTitle 
+                  className="text-white font-black-ops-one text-xl flex items-center justify-end gap-2 cursor-pointer hover:opacity-80"
+                  onClick={() => onOpenChange(false)}
+                >
+                  🛡️MapShield
+                  <ChevronRight className="w-5 h-5 -rotate-90" />
+                </SheetTitle>
+              </div>
+            </SheetHeader>
+            <div className="flex flex-col gap-6 p-6">
+              {!isProjectMode && (
+                <>
+                  <div className="space-y-4">
+                    {/* <h3 className="text-lg font-semibold text-white">Search Location</h3> */}
+                    <SearchBar
+                      value={searchValue}
+                      onChange={onSearchChange}
+                      onSearch={onSearch}
+                      isLoading={isLoading}
+                      error={error}
+                    />
+                  </div>
+                  <ProjectSitesList
+                    sites={projectSites}
+                    onSiteClick={onProjectSiteClick}
+                    isLoading={isLoadingSites}
+                    onSiteDelete={onProjectSiteDelete}
                   />
-                </div>
-                <ProjectSitesList
-                  sites={projectSites}
-                  onSiteClick={onProjectSiteClick}
-                  isLoading={isLoadingSites}
+                </>
+              )}
+
+              {isProjectMode ? (
+                <ProjectSiteForm
+                  isDrawing={isDrawing}
+                  currentPolygon={currentPolygon}
+                  onSubmit={onProjectSiteSubmit}
+                  onCancel={onProjectCancel}
                 />
-              </>
-            )}
+              ) : null}
 
-            {isProjectMode ? (
-              <ProjectSiteForm
-                isDrawing={isDrawing}
-                currentPolygon={currentPolygon}
-                onSubmit={onProjectSiteSubmit}
-                onCancel={onProjectCancel}
-              />
-            ) : null}
-
-            <div className="mt-auto pt-6 border-t border-white/20">
-              <button
-                onClick={onProjectModeToggle}
-                className={`w-full bg-[#4285F4] hover:bg-[#3367D6] backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-lg transition-colors duration-200`}
-              >
-                {isProjectMode ? 'Cancel Project Site' : 'New Project Site'}
-              </button>
+              <div className="mt-auto pt-6 border-t border-white/20">
+                <button
+                  onClick={onProjectModeToggle}
+                  className={`w-full bg-[#4285F4] hover:bg-[#3367D6] backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-lg transition-colors duration-200`}
+                >
+                  {isProjectMode ? 'Cancel Project Site' : 'New Project Site'}
+                </button>
+              </div>
             </div>
           </div>
         </SheetContent>

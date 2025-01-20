@@ -36,7 +36,7 @@ export function WeatherPopup({ weatherData, locationName }: WeatherPopupProps) {
       <Button
         variant="ghost"
         size="icon"
-        className="absolute -top-0 -right-0 h-8 w-8 p-0 text-black hover:bg-white/20 rounded-md"
+        className="absolute top-1 right-1 h-8 w-8 p-0 text-black hover:bg-white/20 rounded-md"
         onClick={() => {
           const closeButton = document.querySelector('.mapboxgl-popup-close-button');
           if (closeButton instanceof HTMLElement) {
@@ -118,7 +118,7 @@ export function WeatherPopup({ weatherData, locationName }: WeatherPopupProps) {
               rel="noopener noreferrer"
               title="View on Wikipedia"
             >
-              Wiki <ExternalLink className="w-3 h-3 ml-1" />
+              View on Wikipedia <ExternalLink className="w-3 h-3 ml-1" />
             </a>
           </Button>
                     </div>

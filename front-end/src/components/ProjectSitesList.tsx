@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { MapPin, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { MapPin, ChevronDown, ChevronUp, Trash2, Pen, Check } from 'lucide-react';
 import { projectSitesService } from '@/services/projectSites';
 import {
   AlertDialog,
@@ -12,6 +12,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ProjectSite {
   id: string;
@@ -28,15 +30,45 @@ interface ProjectSitesListProps {
   sites: ProjectSite[];
   onSiteClick: (site: ProjectSite) => void;
   isLoading: boolean;
+  onSiteDelete: (siteId: string) => void;
 }
 
-export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading }: ProjectSitesListProps) {
+export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading, onSiteDelete }: ProjectSitesListProps) {
   const [sites, setSites] = useState(initialSites);
   const [expandedSiteId, setExpandedSiteId] = useState<string | null>(null);
   const [deletingSiteId, setDeletingSiteId] = useState<string | null>(null);
+  const [editingSiteId, setEditingSiteId] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [siteToDelete, setSiteToDelete] = useState<ProjectSite | null>(null);
   const [isListVisible, setIsListVisible] = useState(true);
+  const [editForm, setEditForm] = useState({ name: '', description: '' });
+
+  const handleEditClick = (site: ProjectSite, event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (editingSiteId === site.id) {
+      setEditingSiteId(null);
+      setEditForm({ name: '', description: '' });
+    } else {
+      setExpandedSiteId(site.id);
+      setEditingSiteId(site.id);
+      setEditForm({ name: site.name, description: site.description || '' });
+    }
+  };
+
+  const handleEditSubmit = async (site: ProjectSite) => {
+    try {
+      const updatedSite = await projectSitesService.update(site.id, {
+        name: editForm.name,
+        description: editForm.description,
+      });
+      const typedUpdatedSite = updatedSite as ProjectSite;
+      setSites(sites.map(s => s.id === site.id ? { ...s, ...typedUpdatedSite } : s));
+      setEditingSiteId(null);
+      setEditForm({ name: '', description: '' });
+    } catch (error) {
+      console.error('Error updating site:', error);
+    }
+  };
 
   const handleDeleteClick = (site: ProjectSite, event: React.MouseEvent) => {
     event.stopPropagation();
@@ -52,6 +84,7 @@ export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading }
       setDeletingSiteId(siteToDelete.id);
       await projectSitesService.delete(siteToDelete.id);
       setSites(sites.filter(site => site.id !== siteToDelete.id));
+      onSiteDelete(siteToDelete.id);
     } catch (error) {
       console.error('Error deleting site:', error);
     } finally {
@@ -110,16 +143,25 @@ export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading }
         {isListVisible && (
           <div className="space-y-2">
             {sites.map((site) => (
-              <div key={site.id} className="rounded-lg overflow-hidden">
+              <div key={site.id} className="rounded-lg overflow-hidden mr-2">
                 <div
                   className="w-full flex justify-between items-center text-white h-auto p-2 hover:bg-white/10 rounded-md cursor-pointer"
                   onClick={() => onSiteClick(site)}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-1">
                     <MapPin className="h-4 w-4" />
-                    <span className="font-medium">{site.name}</span>
+                    {editingSiteId === site.id ? (
+                      <Input
+                        value={editForm.name}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                        className="bg-white text-stone-900 border-none mr-2 p-2 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ) : (
+                      <span className="font-medium">{site.name}</span>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -130,6 +172,22 @@ export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading }
                         <ChevronUp className="h-4 w-4" />
                       ) : (
                         <ChevronDown className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={`h-8 w-8 p-1 ${
+                        editingSiteId === site.id 
+                          ? 'text-green-400 hover:bg-green-500/20 hover:text-green-300'
+                          : 'text-blue-400 hover:bg-blue-500/20 hover:text-blue-300'
+                      }`}
+                      onClick={(e) => editingSiteId === site.id ? handleEditSubmit(site) : handleEditClick(site, e)}
+                    >
+                      {editingSiteId === site.id ? (
+                        <Check className="h-4 w-4" />
+                      ) : (
+                        <Pen className="h-4 w-4" />
                       )}
                     </Button>
                     <Button
@@ -150,14 +208,40 @@ export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading }
                 {expandedSiteId === site.id && (
                   <div className="px-4 py-3 bg-white/5 border-t border-white/10">
                     <div className="space-y-2 text-sm text-white/80">
-                      <p className="text-white/60">Description:</p>
-                      <p className="pl-2">{site.description || 'No description provided'}</p>
-                      <p className="text-white/60 mt-2">Created:</p>
+                      <p className="text-white/90">Description:</p>
+                      {editingSiteId === site.id ? (
+                        <Textarea
+                          value={editForm.description}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                          className="bg-white text-stone-900 border-none p-2 resize-none min-h-[60px] focus-visible:ring-0 focus-visible:ring-offset-0"
+                          placeholder="Add a description..."
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ) : (
+                        <p className="pl-2 text-white/90">{site.description || 'No description provided'}</p>
+                      )}
+                      <p className="text-white/90 mt-2">Created:</p>
                       <p className="pl-2">{formatDate(site.created_at)}</p>
-                      <p className="text-white/60 mt-2">Coordinates:</p>
+                      <p className="text-white/90 mt-2">Coordinates:</p>
                       <p className="pl-2 font-mono text-xs">
                         Center: {site.polygon.coordinates[0][0][0].toFixed(4)}, {site.polygon.coordinates[0][0][1].toFixed(4)}
                       </p>
+                      {editingSiteId === site.id && (
+                        <div className="flex gap-2 justify-end pt-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-white hover:bg-white/10"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingSiteId(null);
+                              setEditForm({ name: '', description: '' });
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

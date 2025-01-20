@@ -31,6 +31,7 @@ export default function Map() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Project site state
   const [isProjectMode, setIsProjectMode] = useState(false);
@@ -262,6 +263,9 @@ export default function Map() {
 
       // Fly to the new site
       handleProjectSiteClick(newSite);
+
+      // Close the sidebar
+      setIsSidebarOpen(false);
 
     } catch (err) {
       console.error('Error creating project site:', err);
@@ -528,6 +532,31 @@ export default function Map() {
     });
   };
 
+  // Function to remove map layers for a specific site
+  const removeProjectSiteLayers = (siteId: string) => {
+    if (!mapInstance) return;
+    const map = mapInstance as mapboxgl.Map;
+    const sourceId = `project-site-${siteId}`;
+
+    // Remove layers first
+    if (map.getLayer(`${sourceId}-fill`)) {
+      map.removeLayer(`${sourceId}-fill`);
+    }
+    if (map.getLayer(`${sourceId}-outline`)) {
+      map.removeLayer(`${sourceId}-outline`);
+    }
+    // Then remove source
+    if (map.getSource(sourceId)) {
+      map.removeSource(sourceId);
+    }
+  };
+
+  // Handle project site deletion
+  const handleProjectSiteDelete = (siteId: string) => {
+    removeProjectSiteLayers(siteId);
+    setProjectSites(prevSites => prevSites.filter(site => site.id !== siteId));
+  };
+
   // Initialize map
   useEffect(() => {
     if (!mapContainer.current || mapInstance) return;
@@ -616,6 +645,9 @@ export default function Map() {
           projectSites={projectSites}
           isLoadingSites={isLoadingSites}
           onProjectSiteClick={handleProjectSiteClick}
+          onProjectSiteDelete={handleProjectSiteDelete}
+          isOpen={isSidebarOpen}
+          onOpenChange={setIsSidebarOpen}
         />
         <div ref={mapContainer} className="w-full h-full" style={{ position: 'absolute' }} />
       </div>
