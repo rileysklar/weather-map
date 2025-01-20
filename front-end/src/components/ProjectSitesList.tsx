@@ -141,15 +141,15 @@ export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading, 
           <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isListVisible ? 'rotate-180' : ''}`} />
         </div>
         {isListVisible && (
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-white/5 [&::-webkit-scrollbar-track]:rounded-full">
             {sites.map((site) => (
               <div key={site.id} className="rounded-lg overflow-hidden mr-2">
                 <div
                   className="w-full flex justify-between items-center text-white h-auto p-2 hover:bg-white/10 rounded-md cursor-pointer"
                   onClick={() => onSiteClick(site)}
                 >
-                  <div className="flex items-center gap-2 flex-1">
-                    <MapPin className="h-4 w-4" />
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <MapPin className="h-4 w-4 shrink-0" />
                     {editingSiteId === site.id ? (
                       <Input
                         value={editForm.name}
@@ -158,7 +158,7 @@ export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading, 
                         onClick={(e) => e.stopPropagation()}
                       />
                     ) : (
-                      <span className="font-medium">{site.name}</span>
+                      <span className="font-medium line-clamp-2 text-ellipsis">{site.name}</span>
                     )}
                   </div>
                   <div className="flex items-center">

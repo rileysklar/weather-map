@@ -76,7 +76,7 @@ export function Sidebar({
           }`}
         >
           🛡️MapShield
-          <ChevronRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+          <ChevronRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1 group-hover:rotate-90" />
         </button>
       </SheetTrigger>
       <SheetPortal>
@@ -90,7 +90,7 @@ export function Sidebar({
           }}
         >
           <div className={`h-full bg-background/80 backdrop-blur-md ${isProjectMode ? 'pointer-events-auto' : ''}`}>
-            <SheetHeader className="p-6 border-b border-white/20">
+            <SheetHeader className="p-4 border-b border-white/20">
               <div 
                 className={`transition-all duration-500 ${
                   isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
@@ -103,11 +103,11 @@ export function Sidebar({
                 }}
               >
                 <SheetTitle 
-                  className="text-white font-black-ops-one text-xl flex items-center justify-end gap-2 cursor-pointer hover:opacity-80"
+                  className="text-white font-black-ops-one p-2 rounded-lg hover:bg-white/10 text-xl flex items-center justify-end gap-2 cursor-pointer hover:opacity-80 group"
                   onClick={() => onOpenChange(false)}
                 >
                   🛡️MapShield
-                  <ChevronRight className="w-5 h-5 -rotate-90" />
+                  <ChevronRight className="w-5 h-5 -rotate-90 group-hover:rotate-90 transition-transform duration-300" />
                 </SheetTitle>
               </div>
             </SheetHeader>
