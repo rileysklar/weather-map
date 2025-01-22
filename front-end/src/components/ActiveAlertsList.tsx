@@ -55,18 +55,26 @@ export function ActiveAlertsList({ alerts, alertPreferences, expandedAlertId, on
             key={alertId}
             className="rounded-lg overflow-hidden"
           >
-            <div 
-              className={`w-full p-4 rounded-md cursor-pointer ${
+            <button 
+              className={`w-full p-4 rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/20 ${
                 alert.type === 'Warning' ? 'bg-red-500/20' :
                 alert.type === 'Watch' ? 'bg-orange-500/20' :
                 alert.type === 'Advisory' ? 'bg-yellow-500/20' :
                 'bg-blue-500/20'
               }`}
               onClick={() => onExpandAlert(expandedAlertId === alertId ? null : alertId)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onExpandAlert(expandedAlertId === alertId ? null : alertId);
+                }
+              }}
+              aria-expanded={expandedAlertId === alertId}
+              aria-controls={`alert-content-${alertId}`}
             >
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="text-white font-medium">{alert.description}</div>
+                  <div className="text-white font-medium text-left">{alert.description}</div>
                   <div className="flex items-center gap-2 shrink-0">
                     <span className={`text-xs px-2 py-1 rounded-md ${
                       alert.type === 'Warning' ? 'bg-red-500/40 text-red-200' :
@@ -80,6 +88,7 @@ export function ActiveAlertsList({ alerts, alertPreferences, expandedAlertId, on
                       className={`w-4 h-4 text-white/80 transition-transform duration-200 ${
                         expandedAlertId === alertId ? 'rotate-180' : ''
                       }`}
+                      aria-hidden="true"
                     />
                   </div>
                 </div>
@@ -92,7 +101,10 @@ export function ActiveAlertsList({ alerts, alertPreferences, expandedAlertId, on
                 </div>
               </div>
               {expandedAlertId === alertId && (
-                <div className="mt-4 pt-4 border-t border-white/10 space-y-3 text-sm">
+                <div 
+                  id={`alert-content-${alertId}`}
+                  className="mt-4 pt-4 text-start border-t border-white/10 space-y-3 text-sm"
+                >
                   {alert.event && (
                     <div>
                       <span className="text-white/60">Event:</span>
@@ -133,7 +145,7 @@ export function ActiveAlertsList({ alerts, alertPreferences, expandedAlertId, on
                   )}
                 </div>
               )}
-            </div>
+            </button>
           </div>
         );
       })}

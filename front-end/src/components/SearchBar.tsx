@@ -132,7 +132,7 @@ export function SearchBar({ value, onChange, onSearch, isLoading, error }: Searc
         <Button
           type="submit"
           disabled={isLoading}
-          className="absolute right-0 top-1/2 -translate-y-1/2 bg-blue-500 hover:bg-blue-600 rounded-l-none"
+          className="absolute right-0 top-1/2 -translate-y-1/2 bg-emerald-500 hover:bg-emerald-600 rounded-l-none"
         >
           <Search className={`h-5 w-5 text-white ${isLoading ? 'animate-spin' : ''}`} />
         </Button>

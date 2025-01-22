@@ -131,8 +131,16 @@ export default function Map() {
       console.log('🎭 Rendering WeatherPopup component');
       root.render(
         <WeatherPopup 
-          weatherData={weatherData}
+          weatherData={weatherData} 
           locationName={locationName}
+          onCreateProjectSite={() => {
+            // Close the popup
+            popupRef.current?.remove();
+            // Toggle project mode
+            handleProjectModeToggle();
+            // Start with empty polygon
+            setCurrentPolygon([]);
+          }}
         />
       );
 

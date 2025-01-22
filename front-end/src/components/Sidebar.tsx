@@ -198,19 +198,30 @@ export function Sidebar({
 
   return (
     <TooltipProvider>
+      {/* Add floating button for mobile when polygon is drawn but sidebar is closed */}
+      {isProjectMode && currentPolygon.length > 0 && !isOpen && (
+        <button
+          onClick={() => onOpenChange(true)}
+          className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-emerald-500 hover:bg-emerald-500/60 text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200 shadow-lg"
+        >
+          Continue to Form
+        </button>
+      )}
       <Sheet 
         open={isOpen} 
         onOpenChange={(open) => {
-          // Only allow closing if not in project mode
-          if (!isProjectMode) {
-            onOpenChange(open);
+          // Allow opening if we have a polygon drawn
+          if (isProjectMode && !open && currentPolygon.length === 0) {
+            // Only prevent closing when in project mode with no polygon
+            return;
           }
+          onOpenChange(open);
         }}
         modal={!isProjectMode}
       >
         <SheetTrigger asChild>
           <button 
-            className={`fixed left-4 top-4 z-50 bg-[#4285F4] backdrop-blur-md border border-white/20 text-white hover:bg-[#3367D6] px-4 py-2 rounded-lg font-black-ops-one text-xl transition-all duration-500 hover:scale-105 flex items-center gap-2 group ${
+            className={`fixed left-4 top-4 z-50 bg-emerald-500 backdrop-blur-md border border-white/20 text-white hover:bg-emerald-600 px-4 py-2 rounded-lg font-black-ops-one text-xl transition-all duration-500 hover:scale-105 flex items-center gap-2 group ${
               isOpen ? 'opacity-0' : 'opacity-100'
             }`}
           >
@@ -286,51 +297,74 @@ export function Sidebar({
 
                         {/* Project Sites Section */}
                         <div className="space-y-4">
-                          <div 
-                            className={`flex items-center justify-between text-lg font-semibold text-white pb-2 cursor-pointer hover:text-white/80 ${isProjectsVisible ? 'border-b border-white/20' : ''}`}
+                          <button 
+                            className={`w-full flex items-center justify-between text-lg font-semibold text-white pb-2 cursor-pointer hover:text-white/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20  ${isProjectsVisible ? 'border-b border-white/20' : ''}`}
                             onClick={() => setIsProjectsVisible(!isProjectsVisible)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                setIsProjectsVisible(!isProjectsVisible);
+                              }
+                            }}
+                            aria-expanded={isProjectsVisible}
+                            aria-controls="project-sites-content"
                           >
                             <div className="flex items-center gap-2">
-                              <Building2 className="h-5 w-5 text-emerald-400" />
+                              <Building2 className="h-5 w-5 text-emerald-400" aria-hidden="true" />
                               <span>My Project Sites</span>
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <span className="px-2 py-0.5 text-sm bg-emerald-500/20 text-emerald-400 rounded-full">
-                                    {projectSites.length}
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Total Project Sites</p>
-                                </TooltipContent>
-                              </Tooltip>
+                              <div>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="w-6 h-6 flex items-center justify-center text-sm bg-emerald-500/20 text-emerald-400 rounded-full">
+                                      {projectSites.length}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Total Project Sites</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
                             </div>
-                            <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isProjectsVisible ? 'rotate-180' : ''}`} />
-                          </div>
-                          {isProjectsVisible && (
-                            <ProjectSitesList
-                              sites={projectSites}
-                              onSiteClick={onProjectSiteClick}
-                              isLoading={isLoadingSites}
-                              onSiteDelete={onProjectSiteDelete}
-                              onWeatherAlerts={(newAlerts, siteName) => handleWeatherAlerts(newAlerts, siteName)}
+                            <ChevronDown 
+                              className={`w-5 h-5 transition-transform duration-200 ${isProjectsVisible ? 'rotate-180' : ''}`} 
+                              aria-hidden="true"
                             />
+                          </button>
+                          {isProjectsVisible && (
+                            <div id="project-sites-content">
+                              <ProjectSitesList
+                                sites={projectSites}
+                                onSiteClick={onProjectSiteClick}
+                                isLoading={isLoadingSites}
+                                onSiteDelete={onProjectSiteDelete}
+                                onWeatherAlerts={(newAlerts, siteName) => handleWeatherAlerts(newAlerts, siteName)}
+                              />
+                            </div>
                           )}
                         </div>
 
                         {/* Weather Alerts Section */}
                         <div className="space-y-4">
-                          <div 
-                            className={`flex items-center justify-between text-lg font-semibold text-white pb-2 cursor-pointer hover:text-white/80 ${isAlertsVisible ? 'border-b border-white/20' : ''}`}
+                          <button 
+                            className={`w-full flex items-center justify-between text-lg font-semibold text-white pb-2 cursor-pointer hover:text-white/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20 ${isAlertsVisible ? 'border-b border-white/20' : ''}`}
                             onClick={() => setIsAlertsVisible(!isAlertsVisible)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                setIsAlertsVisible(!isAlertsVisible);
+                              }
+                            }}
+                            aria-expanded={isAlertsVisible}
+                            aria-controls="alerts-content"
                           >
                             <div className="flex items-center gap-2">
-                              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                              <AlertTriangle className="h-5 w-5 text-yellow-500" aria-hidden="true" />
                               <span>Active Alerts</span>
                               {alerts.length > 0 && (
                                 <div className="flex items-center -space-x-1.5">
                                   {alerts.filter(a => a.type === 'Warning').length > 0 && (
                                     <Tooltip>
-                                      <TooltipTrigger>
+                                      <TooltipTrigger asChild>
                                         <span className="w-6 h-6 flex items-center justify-center bg-red-500/20 text-red-400 rounded-full text-sm">
                                           {alerts.filter(a => a.type === 'Warning').length}
                                         </span>
@@ -342,7 +376,7 @@ export function Sidebar({
                                   )}
                                   {alerts.filter(a => a.type === 'Watch').length > 0 && (
                                     <Tooltip>
-                                      <TooltipTrigger>
+                                      <TooltipTrigger asChild>
                                         <span className="w-6 h-6 flex items-center justify-center bg-orange-500/20 text-orange-400 rounded-full text-sm">
                                           {alerts.filter(a => a.type === 'Watch').length}
                                         </span>
@@ -354,7 +388,7 @@ export function Sidebar({
                                   )}
                                   {alerts.filter(a => a.type === 'Advisory').length > 0 && (
                                     <Tooltip>
-                                      <TooltipTrigger>
+                                      <TooltipTrigger asChild>
                                         <span className="w-6 h-6 flex items-center justify-center bg-yellow-500/20 text-yellow-400 rounded-full text-sm">
                                           {alerts.filter(a => a.type === 'Advisory').length}
                                         </span>
@@ -366,7 +400,7 @@ export function Sidebar({
                                   )}
                                   {alerts.filter(a => a.type === 'Statement').length > 0 && (
                                     <Tooltip>
-                                      <TooltipTrigger>
+                                      <TooltipTrigger asChild>
                                         <span className="w-6 h-6 flex items-center justify-center bg-blue-500/20 text-blue-400 rounded-full text-sm">
                                           {alerts.filter(a => a.type === 'Statement').length}
                                         </span>
@@ -379,38 +413,54 @@ export function Sidebar({
                                 </div>
                               )}
                             </div>
-                            <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isAlertsVisible ? 'rotate-180' : ''}`} />
-                          </div>
-                          {isAlertsVisible && (
-                            <ActiveAlertsList
-                              alerts={alerts}
-                              alertPreferences={alertPreferences}
-                              expandedAlertId={expandedAlertId}
-                              onExpandAlert={setExpandedAlertId}
+                            <ChevronDown 
+                              className={`w-5 h-5 transition-transform duration-200 ${isAlertsVisible ? 'rotate-180' : ''}`}
+                              aria-hidden="true"
                             />
+                          </button>
+                          {isAlertsVisible && (
+                            <div id="alerts-content">
+                              <ActiveAlertsList
+                                alerts={alerts}
+                                alertPreferences={alertPreferences}
+                                expandedAlertId={expandedAlertId}
+                                onExpandAlert={setExpandedAlertId}
+                              />
+                            </div>
                           )}
                         </div>
 
                         {/* Risk Assessment Section */}
                         <div className="space-y-4">
-                          <div 
-                            className={`flex items-center justify-between text-lg font-semibold text-white pb-2 cursor-pointer hover:text-white/80 ${isRiskVisible ? 'border-b border-white/20' : ''}`}
+                          <button 
+                            className={`w-full flex items-center justify-between text-lg font-semibold text-white pb-2 cursor-pointer hover:text-white/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20 ${isRiskVisible ? 'border-b border-white/20' : ''}`}
                             onClick={() => setIsRiskVisible(!isRiskVisible)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                setIsRiskVisible(!isRiskVisible);
+                              }
+                            }}
+                            aria-expanded={isRiskVisible}
+                            aria-controls="risk-assessment-content"
                           >
                             <div className="flex items-center gap-2">
-                              <BarChart3 className="h-5 w-5 text-blue-400" />
+                              <BarChart3 className="h-5 w-5 text-blue-400" aria-hidden="true" />
                               <span>Risk Assessment</span>
                             </div>
-                            <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isRiskVisible ? 'rotate-180' : ''}`} />
-                          </div>
+                            <ChevronDown 
+                              className={`w-5 h-5 transition-transform duration-200 ${isRiskVisible ? 'rotate-180' : ''}`} 
+                              aria-hidden="true"
+                            />
+                          </button>
                           {isRiskVisible && (
-                            <div className="space-y-2 text-white/80">
+                            <div id="risk-assessment-content" className="space-y-2 text-white/80">
                               <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
                                 <div className="flex justify-between items-center">
                                   <p className="font-medium">Flood Risk Index</p>
                                   <span className="text-yellow-500">Moderate</span>
                                 </div>
-                                <div className="mt-2 h-2 bg-white/10 rounded-full overflow-hidden">
+                                <div className="mt-2 h-2 bg-white/10 rounded-full overflow-hidden" role="progressbar" aria-valuenow={60} aria-valuemin={0} aria-valuemax={100}>
                                   <div className="h-full w-[60%] bg-yellow-500 rounded-full" />
                                 </div>
                               </div>
@@ -419,7 +469,7 @@ export function Sidebar({
                                   <p className="font-medium">Wind Damage Risk</p>
                                   <span className="text-green-500">Low</span>
                                 </div>
-                                <div className="mt-2 h-2 bg-white/10 rounded-full overflow-hidden">
+                                <div className="mt-2 h-2 bg-white/10 rounded-full overflow-hidden" role="progressbar" aria-valuenow={30} aria-valuemin={0} aria-valuemax={100}>
                                   <div className="h-full w-[30%] bg-green-500 rounded-full" />
                                 </div>
                               </div>
@@ -429,30 +479,41 @@ export function Sidebar({
 
                         {/* Historical Weather Section */}
                         <div className="space-y-4">
-                          <div 
-                            className={`flex items-center justify-between text-lg font-semibold text-white pb-2 cursor-pointer hover:text-white/80 ${isHistoryVisible ? 'border-b border-white/20' : ''}`}
+                          <button 
+                            className={`w-full flex items-center justify-between text-lg font-semibold text-white pb-2 cursor-pointer hover:text-white/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20 ${isHistoryVisible ? 'border-b border-white/20' : ''}`}
                             onClick={() => setIsHistoryVisible(!isHistoryVisible)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                setIsHistoryVisible(!isHistoryVisible);
+                              }
+                            }}
+                            aria-expanded={isHistoryVisible}
+                            aria-controls="historical-data-content"
                           >
                             <div className="flex items-center gap-2">
-                              <History className="h-5 w-5 text-purple-400" />
+                              <History className="h-5 w-5 text-purple-400" aria-hidden="true" />
                               <span>Historical Data</span>
                             </div>
-                            <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isHistoryVisible ? 'rotate-180' : ''}`} />
-                          </div>
+                            <ChevronDown 
+                              className={`w-5 h-5 transition-transform duration-200 ${isHistoryVisible ? 'rotate-180' : ''}`} 
+                              aria-hidden="true"
+                            />
+                          </button>
                           {isHistoryVisible && (
-                            <div className="space-y-2 text-white/80">
+                            <div id="historical-data-content" className="space-y-2 text-white/80">
                               <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
                                 <p className="font-medium flex items-center gap-2">
-                                  <Cloud className="h-4 w-4" />
+                                  <Cloud className="h-4 w-4" aria-hidden="true" />
                                   Precipitation Trends
                                 </p>
                                 <p className="text-sm mt-1">30% above average for May</p>
                               </div>
                               <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
                                 <p className="font-medium">Recent Events</p>
-                                <div className="mt-2 text-sm space-y-1">
-                                  <p>• Heavy rainfall event (Apr 15)</p>
-                                  <p>• High wind advisory (Apr 2)</p>
+                                <div className="mt-2 text-sm space-y-1" role="list">
+                                  <p role="listitem">• Heavy rainfall event (Apr 15)</p>
+                                  <p role="listitem">• High wind advisory (Apr 2)</p>
                                 </div>
                               </div>
                             </div>
@@ -467,6 +528,7 @@ export function Sidebar({
                         currentPolygon={currentPolygon}
                         onSubmit={onProjectSiteSubmit}
                         onCancel={onProjectCancel}
+                        onOpenChange={onOpenChange}
                       />
                     ) : null}
                   </div>
@@ -483,7 +545,7 @@ export function Sidebar({
                   <div className="flex-none p-6 pt-4 border-t border-white/20 bg-background/80 backdrop-blur-md">
                     <button
                       onClick={onProjectModeToggle}
-                      className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
+                      className="w-full bg-emerald-500 hover:bg-emerald-500/60 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
                     >
                       <Building2 className="w-5 h-5" />
                       Create New Project Site
@@ -491,13 +553,21 @@ export function Sidebar({
                     <div className="flex justify-center mt-4 gap-2">
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <button
-                            type="button"
+                          <div
+                            role="button"
+                            tabIndex={0}
                             onClick={() => setIsSettingsOpen(true)}
-                            className="p-2 hover:bg-white/10 rounded-lg transition-colors duration-200"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                setIsSettingsOpen(true);
+                              }
+                            }}
+                            className="p-2 hover:bg-white/10 rounded-lg transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
                           >
-                            <Settings className="w-5 h-5 text-white/80" />
-                          </button>
+                            <Settings className="w-5 h-5 text-white/80" aria-hidden="true" />
+                            <span className="sr-only">Open Settings</span>
+                          </div>
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Settings</p>
@@ -506,12 +576,12 @@ export function Sidebar({
 
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <button
-                            type="button"
-                            className="p-2 hover:bg-white/10 rounded-lg transition-colors duration-200"
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            className="p-2 hover:bg-white/10 rounded-lg transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
                             onClick={async () => {
                               try {
-                                // Update alerts for all sites
                                 for (const site of projectSites) {
                                   const [longitude, latitude] = site.polygon.coordinates[0][0];
                                   const weatherData = await weatherService.getWeatherData(latitude, longitude, site.name);
@@ -521,9 +591,26 @@ export function Sidebar({
                                 console.error('Failed to refresh weather alerts:', error);
                               }
                             }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                (async () => {
+                                  try {
+                                    for (const site of projectSites) {
+                                      const [longitude, latitude] = site.polygon.coordinates[0][0];
+                                      const weatherData = await weatherService.getWeatherData(latitude, longitude, site.name);
+                                      handleWeatherAlerts(weatherData.alerts, site.name);
+                                    }
+                                  } catch (error) {
+                                    console.error('Failed to refresh weather alerts:', error);
+                                  }
+                                })();
+                              }
+                            }}
                           >
-                            <RefreshCw className="w-5 h-5 text-white/80" />
-                          </button>
+                            <RefreshCw className="w-5 h-5 text-white/80" aria-hidden="true" />
+                            <span className="sr-only">Refresh Weather Alerts</span>
+                          </div>
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Refresh Weather Alerts</p>
@@ -532,32 +619,53 @@ export function Sidebar({
 
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <label
-                            className="p-2 hover:bg-white/10 rounded-lg transition-colors duration-200 cursor-pointer"
-                          >
-                            <input
-                              type="file"
-                              accept=".json"
-                              className="hidden"
-                              onChange={async (e) => {
-                                const file = e.target.files?.[0];
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            className="p-2 hover:bg-white/10 rounded-lg transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+                            onClick={() => {
+                              const input = document.createElement('input');
+                              input.type = 'file';
+                              input.accept = '.json';
+                              input.onchange = async (e) => {
+                                const file = (e.target as HTMLInputElement).files?.[0];
                                 if (!file) return;
                                 
                                 try {
                                   const result = await projectImportService.handleImport(file);
                                   console.log('Import results:', result);
-                                  // Refresh the sites list
                                   window.location.reload();
                                 } catch (error) {
                                   console.error('Failed to import sites:', error);
                                 }
-                                
-                                // Clear the input
-                                e.target.value = '';
-                              }}
-                            />
-                            <Upload className="w-5 h-5 text-white/80" />
-                          </label>
+                              };
+                              input.click();
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                const input = document.createElement('input');
+                                input.type = 'file';
+                                input.accept = '.json';
+                                input.onchange = async (e) => {
+                                  const file = (e.target as HTMLInputElement).files?.[0];
+                                  if (!file) return;
+                                  
+                                  try {
+                                    const result = await projectImportService.handleImport(file);
+                                    console.log('Import results:', result);
+                                    window.location.reload();
+                                  } catch (error) {
+                                    console.error('Failed to import sites:', error);
+                                  }
+                                };
+                                input.click();
+                              }
+                            }}
+                          >
+                            <Upload className="w-5 h-5 text-white/80" aria-hidden="true" />
+                            <span className="sr-only">Import Project Sites</span>
+                          </div>
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Import Project Sites</p>
@@ -566,8 +674,9 @@ export function Sidebar({
 
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <button
-                            type="button"
+                          <div
+                            role="button"
+                            tabIndex={0}
                             onClick={() => {
                               try {
                                 projectExportService.exportToJson(projectSites);
@@ -575,10 +684,21 @@ export function Sidebar({
                                 console.error('Failed to export sites:', error);
                               }
                             }}
-                            className="p-2 hover:bg-white/10 rounded-lg transition-colors duration-200"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                try {
+                                  projectExportService.exportToJson(projectSites);
+                                } catch (error) {
+                                  console.error('Failed to export sites:', error);
+                                }
+                              }
+                            }}
+                            className="p-2 hover:bg-white/10 rounded-lg transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
                           >
-                            <Download className="w-5 h-5 text-white/80" />
-                          </button>
+                            <Download className="w-5 h-5 text-white/80" aria-hidden="true" />
+                            <span className="sr-only">Export Project Sites</span>
+                          </div>
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Export Project Sites</p>
