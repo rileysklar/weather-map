@@ -21,6 +21,11 @@ interface ActiveAlertsListProps {
 }
 
 export function ActiveAlertsList({ alerts, alertPreferences, expandedAlertId, onExpandAlert }: ActiveAlertsListProps) {
+  // Translate NOAA codes to human-readable text
+  const translateNoaaCodes = (description: string) => {
+    return description.replace(/\bAQ\b/g, 'Air Quality');
+  };
+
   const filteredAlerts = alerts.filter(alert => {
     switch (alert.type) {
       case 'Warning':
@@ -56,11 +61,11 @@ export function ActiveAlertsList({ alerts, alertPreferences, expandedAlertId, on
             className="rounded-lg overflow-hidden"
           >
             <button 
-              className={`w-full p-4 rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/20 ${
-                alert.type === 'Warning' ? 'bg-red-500/20' :
-                alert.type === 'Watch' ? 'bg-orange-500/20' :
-                alert.type === 'Advisory' ? 'bg-yellow-500/20' :
-                'bg-blue-500/20'
+              className={`w-full p-4 rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/20 transition-colors duration-200 ${
+                alert.type === 'Warning' ? 'bg-red-500/20 hover:bg-red-500/30' :
+                alert.type === 'Watch' ? 'bg-orange-500/20 hover:bg-orange-500/30' :
+                alert.type === 'Advisory' ? 'bg-yellow-500/20 hover:bg-yellow-500/30' :
+                'bg-blue-500/20 hover:bg-blue-500/30'
               }`}
               onClick={() => onExpandAlert(expandedAlertId === alertId ? null : alertId)}
               onKeyDown={(e) => {
@@ -74,7 +79,7 @@ export function ActiveAlertsList({ alerts, alertPreferences, expandedAlertId, on
             >
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="text-white font-medium text-left">{alert.description}</div>
+                  <div className="text-white font-medium text-left">{translateNoaaCodes(alert.description)}</div>
                   <div className="flex items-center gap-2 shrink-0">
                     <span className={`text-xs px-2 py-1 rounded-md ${
                       alert.type === 'Warning' ? 'bg-red-500/40 text-red-200' :

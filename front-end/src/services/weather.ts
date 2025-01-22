@@ -201,6 +201,9 @@ class WeatherService {
       );
       
       if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Location is outside the United States. Weather alerts are only available for US locations.');
+        }
         throw new Error(`Weather API error: ${response.statusText}`);
       }
       
@@ -262,27 +265,41 @@ class WeatherService {
   async getWeatherData(lat: number, lon: number, siteName: string) {
     try {
       // Step 1: Get the weather point data
-      const pointData = await this.getPoint(lat, lon);
-      
-      // Step 2: Get the forecast using the URL from the point data
-      const forecast = await this.getForecast(pointData.properties.forecast);
-      
-      // Step 3: Get the detailed gridpoint data
-      const gridpoint = await this.getGridpointForecast(
-        pointData.properties.gridId,
-        pointData.properties.gridX,
-        pointData.properties.gridY
-      );
+      try {
+        const pointData = await this.getPoint(lat, lon);
+        
+        // Step 2: Get the forecast using the URL from the point data
+        const forecast = await this.getForecast(pointData.properties.forecast);
+        
+        // Step 3: Get the detailed gridpoint data
+        const gridpoint = await this.getGridpointForecast(
+          pointData.properties.gridId,
+          pointData.properties.gridX,
+          pointData.properties.gridY
+        );
 
-      // Parse hazards into a more usable format
-      const alerts = this.parseHazards(siteName, gridpoint.properties.hazards);
-      
-      return {
-        forecast: forecast.properties.periods,
-        gridpoint: gridpoint.properties,
-        point: pointData.properties,
-        alerts
-      };
+        // Parse hazards into a more usable format
+        const alerts = this.parseHazards(siteName, gridpoint.properties.hazards);
+        
+        return {
+          forecast: forecast.properties.periods,
+          gridpoint: gridpoint.properties,
+          point: pointData.properties,
+          alerts
+        };
+      } catch (error) {
+        // If we get a 404 error, it means the location is outside the USA
+        // Return data without alerts
+        if (error instanceof Error && error.message.includes('Weather API error')) {
+          return {
+            forecast: [],
+            gridpoint: null,
+            point: null,
+            alerts: []
+          };
+        }
+        throw error;
+      }
     } catch (error) {
       if (error instanceof Error) {
         throw new Error(`Failed to fetch weather data: ${error.message}`);

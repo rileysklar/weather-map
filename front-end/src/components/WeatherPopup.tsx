@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { ChevronDown, Building2, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { TemperatureUnit, getStoredTemperatureUnit, convertTemperature } from '@/utils/temperature';
 
 interface WeatherPopupProps {
   weatherData: {
@@ -40,6 +41,17 @@ interface WeatherPopupProps {
 
 export function WeatherPopup({ weatherData, locationName, onCreateProjectSite }: WeatherPopupProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [temperatureUnit, setTemperatureUnit] = useState<TemperatureUnit>('F');
+
+  useEffect(() => {
+    setTemperatureUnit(getStoredTemperatureUnit());
+  }, []);
+
+  // Convert temperature if needed (API returns Fahrenheit)
+  const displayTemp = (temp: number) => {
+    const convertedTemp = temperatureUnit === 'C' ? convertTemperature(temp, 'F', 'C') : temp;
+    return `${Math.round(convertedTemp)}°${temperatureUnit}`;
+  };
 
   return (
     <Card className="w-[350px] bg-black/20 border-white/20 text-white p-4 space-y-4 relative">
@@ -59,10 +71,12 @@ export function WeatherPopup({ weatherData, locationName, onCreateProjectSite }:
       <div className="space-y-2 pr-8">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-xl">{locationName || weatherData.name || 'Current Location'}</h3>
-          <span className="text-2xl" aria-label={`Temperature: ${Math.round(weatherData.main.temp)}°F`}>{Math.round(weatherData.main.temp)}°F</span>
+          <span className="text-2xl" aria-label={`Temperature: ${displayTemp(weatherData.main.temp)}`}>
+            {displayTemp(weatherData.main.temp)}
+          </span>
         </div>
         <div className="flex items-center justify-between text-sm text-white/80">
-          <span>Feels like {Math.round(weatherData.main.feels_like)}°F</span>
+          <span>Feels like {displayTemp(weatherData.main.feels_like)}</span>
           <span>{weatherData.weather[0].description}</span>
         </div>
       </div>

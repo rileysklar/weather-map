@@ -6,7 +6,7 @@ export default function LoadingScreen() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setShow(false);
-    }, 0);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, []); // Only run once on mount

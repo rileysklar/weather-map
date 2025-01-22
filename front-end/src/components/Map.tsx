@@ -156,7 +156,10 @@ export default function Map() {
       if (popupRef.current) {
         const errorDiv = document.createElement('div');
         errorDiv.className = 'p-4';
-        errorDiv.innerHTML = '<p class="text-white">⚠️ Weather data unavailable</p>';
+        const errorMessage = error instanceof Error && error.message.includes('Weather API error') 
+          ? '⚠️ Weather alerts are only available for locations within the United States'
+          : '⚠️ Weather data unavailable';
+        errorDiv.innerHTML = `<p class="text-white">${errorMessage}</p>`;
         popupRef.current.setDOMContent(errorDiv);
       }
     }
@@ -225,8 +228,15 @@ export default function Map() {
           const weatherData = await weatherService.getWeatherData(latitude, longitude, site.name);
           return { ...site, alerts: weatherData.alerts };
         } catch (error) {
-          console.error(`Failed to fetch weather data for site ${site.name}:`, error);
-          return site;
+          // Only log errors that aren't related to non-US locations
+          if (!(error instanceof Error && error.message.includes('outside the United States'))) {
+            console.error(`Failed to fetch weather data for site ${site.name}:`, error);
+          } else {
+            // For non-US locations, just log a debug message
+            console.debug(`Site "${site.name}" is outside the US - skipping weather alerts`);
+          }
+          // Return site with empty alerts array
+          return { ...site, alerts: [] };
         }
       }));
 
@@ -235,12 +245,22 @@ export default function Map() {
       sitesWithWeather.forEach((site) => {
         const sourceId = `project-site-${site.id}`;
         
-        // Remove existing layers and source if they exist
+        // Remove existing layers and sources if they exist
         if (map.getLayer(`${sourceId}-fill`)) {
           map.removeLayer(`${sourceId}-fill`);
         }
         if (map.getLayer(`${sourceId}-outline`)) {
           map.removeLayer(`${sourceId}-outline`);
+        }
+        if (map.getLayer(`${sourceId}-alert-marker`)) {
+          map.removeLayer(`${sourceId}-alert-marker`);
+        }
+        const alertSourceId = `${sourceId}-alert`;
+        if (map.getLayer(alertSourceId)) {
+          map.removeLayer(alertSourceId);
+        }
+        if (map.getSource(alertSourceId)) {
+          map.removeSource(alertSourceId);
         }
         if (map.getSource(sourceId)) {
           map.removeSource(sourceId);
@@ -255,7 +275,10 @@ export default function Map() {
             properties: {
               id: site.id,
               name: site.name,
-              description: site.description
+              description: site.description,
+              hasAlerts: site.alerts && site.alerts.length > 0,
+              alertTypes: site.alerts?.map(a => a.type).join(', '),
+              alertCount: site.alerts?.length || 0
             }
           }
         });
@@ -281,6 +304,102 @@ export default function Map() {
             'line-width': 2
           }
         });
+
+        // Add alert marker if site has alerts
+        if (site.alerts && site.alerts.length > 0) {
+          // Get the center point of the polygon
+          const [centerLng, centerLat] = site.polygon.coordinates[0][0];
+          
+          // Get the most severe alert type
+          const getAlertPriority = (type: string) => {
+            switch (type) {
+              case 'Warning': return 1;
+              case 'Watch': return 2;
+              case 'Advisory': return 3;
+              case 'Statement': return 4;
+              default: return 5;
+            }
+          };
+
+          // Sort alerts by priority and get the most severe one
+          const sortedAlerts = [...site.alerts].sort((a, b) => 
+            getAlertPriority(a.type) - getAlertPriority(b.type)
+          );
+          const mostSevereAlert = sortedAlerts[0];
+          
+          // Create a point source for the alert marker
+          map.addSource(alertSourceId, {
+            type: 'geojson',
+            data: {
+              type: 'Feature',
+              geometry: {
+                type: 'Point',
+                coordinates: [centerLng, centerLat]
+              },
+              properties: {
+                siteId: site.id,
+                siteName: site.name,
+                alertCount: site.alerts.length,
+                alertTypes: mostSevereAlert.type,
+                alertDescription: mostSevereAlert.description
+              }
+            }
+          });
+
+          // Add the alert marker layer
+          map.addLayer({
+            id: `${sourceId}-alert-marker`,
+            type: 'symbol',
+            source: alertSourceId,
+            layout: {
+              'text-field': ['format',
+                ['get', 'siteName'], { 'font-scale': 1.2 },
+                '\n',
+                ['get', 'alertTypes'], { 'font-scale': 0.9, 'text-color': [
+                  'match',
+                  ['get', 'alertTypes'],
+                  'Warning', '#ef4444',  // Red for Warning
+                  'Watch', '#f97316',    // Orange for Watch
+                  'Advisory', '#eab308',  // Yellow for Advisory
+                  'Statement', '#3b82f6', // Blue for Statement
+                  '#ffffff'  // Default white
+                ] }
+              ],
+              'text-size': 14,
+              'text-allow-overlap': true,
+              'text-anchor': 'center',
+              'text-max-width': 12,
+              'text-line-height': 1.3,
+              'text-justify': 'center'
+            },
+            paint: {
+              'text-color': '#ffffff',
+              'text-halo-color': '#000000',
+              'text-halo-width': 1
+            }
+          });
+
+          // Add hover effect and click handler
+          map.on('mouseenter', `${sourceId}-alert-marker`, () => {
+            map.getCanvas().style.cursor = 'pointer';
+          });
+
+          map.on('mouseleave', `${sourceId}-alert-marker`, () => {
+            map.getCanvas().style.cursor = '';
+          });
+
+          // Add click handler to zoom to the site
+          map.on('click', `${sourceId}-alert-marker`, (e) => {
+            if (e.features && e.features[0]) {
+              const feature = e.features[0];
+              const siteId = feature.properties?.siteId;
+              const clickedSite = sitesWithWeather.find(s => s.id === siteId);
+              if (clickedSite) {
+                handleProjectSiteClick(clickedSite);
+              }
+            }
+          });
+        }
       });
     } catch (error) {
       console.error('Error loading project sites:', error);
@@ -604,6 +723,9 @@ export default function Map() {
     if (map.getLayer(`${sourceId}-outline`)) {
       map.removeLayer(`${sourceId}-outline`);
     }
+    if (map.getLayer(`${sourceId}-alert-marker`)) {
+      map.removeLayer(`${sourceId}-alert-marker`);
+    }
     // Then remove source
     if (map.getSource(sourceId)) {
       map.removeSource(sourceId);
@@ -636,7 +758,8 @@ export default function Map() {
 
     map.on('load', () => {
       mapInstance = map;
-      // Load project sites after map is initialized
+      
+      // Load project sites
       loadProjectSites();
       
       // Ensure loading screen shows for at least 3 seconds

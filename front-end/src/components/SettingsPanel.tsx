@@ -1,7 +1,8 @@
-import React from 'react';
-import { Settings, X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Settings, X, Thermometer } from 'lucide-react';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { TemperatureUnit, getStoredTemperatureUnit, setStoredTemperatureUnit } from '@/utils/temperature';
 
 interface AlertPreferences {
   warnings: boolean;
@@ -23,14 +24,26 @@ export function SettingsPanel({
   alertPreferences,
   onAlertPreferencesChange
 }: SettingsPanelProps) {
+  const [temperatureUnit, setTemperatureUnit] = useState<TemperatureUnit>('F');
+
+  useEffect(() => {
+    setTemperatureUnit(getStoredTemperatureUnit());
+  }, []);
+
   if (!isOpen) return null;
 
   const handleSwitchChange = (key: keyof AlertPreferences) => (checked: boolean) => {
     onAlertPreferencesChange({ ...alertPreferences, [key]: checked });
   };
 
+  const handleTemperatureUnitChange = (checked: boolean) => {
+    const newUnit: TemperatureUnit = checked ? 'C' : 'F';
+    setTemperatureUnit(newUnit);
+    setStoredTemperatureUnit(newUnit);
+  };
+
   return (
-    <div className={`h-full flex flex-col ${isOpen ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'} transition-all duration-300`}>
+    <div className={`h-full flex flex-col ${isOpen ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'} transition-all delay-100 duration-300`}>
       {/* Header */}
       <div className="flex-none p-4 border-b border-white/20">
         <div className="flex items-center justify-between">
@@ -51,6 +64,24 @@ export function SettingsPanel({
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         <div className="p-6">
           <div className="space-y-6">
+            {/* Display Settings Section */}
+            <div>
+              <h3 className="text-white text-sm font-medium mb-4">Display Settings</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Thermometer className="w-4 h-4 text-white/80" />
+                    <Label htmlFor="temperature-unit" className="text-white/90">Use Celsius</Label>
+                  </div>
+                  <Switch
+                    id="temperature-unit"
+                    checked={temperatureUnit === 'C'}
+                    onCheckedChange={handleTemperatureUnitChange}
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Alert Preferences Section */}
             <div>
               <h3 className="text-white text-sm font-medium mb-4">Alert Preferences</h3>
