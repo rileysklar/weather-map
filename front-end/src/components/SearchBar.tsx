@@ -23,6 +23,7 @@ export function SearchBar({ value, onChange, onSearch, isLoading, error }: Searc
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -66,6 +67,39 @@ export function SearchBar({ value, onChange, onSearch, isLoading, error }: Searc
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    setSelectedIndex(-1);
+  }, [suggestions]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedIndex(prev => 
+          prev < suggestions.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedIndex(prev => prev > -1 ? prev - 1 : prev);
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedIndex >= 0) {
+          handleSuggestionClick(suggestions[selectedIndex]);
+        } else {
+          handleSubmit(e);
+        }
+        break;
+      case 'Escape':
+        setShowSuggestions(false);
+        setSelectedIndex(-1);
+        break;
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (value.trim()) {
@@ -92,6 +126,7 @@ export function SearchBar({ value, onChange, onSearch, isLoading, error }: Searc
             setShowSuggestions(true);
           }}
           onFocus={() => setShowSuggestions(true)}
+          onKeyDown={handleKeyDown}
           className={`w-full py-2 md:py-3 lg:py-4 pr-12 ${glassInputClassName}`}
         />
         <Button
@@ -109,7 +144,9 @@ export function SearchBar({ value, onChange, onSearch, isLoading, error }: Searc
             {suggestions.map((suggestion, index) => (
               <button
                 key={index}
-                className="w-full px-4 py-2 text-left text-white hover:bg-white/10 flex items-center gap-2 transition-colors"
+                className={`w-full px-4 py-2 text-left text-white hover:bg-white/10 flex items-center gap-2 transition-colors ${
+                  index === selectedIndex ? 'bg-white/20' : ''
+                }`}
                 onClick={() => handleSuggestionClick(suggestion)}
               >
                 <MapPin className="h-4 w-4 shrink-0 text-blue-400" />

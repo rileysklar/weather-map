@@ -327,11 +327,11 @@ export function Sidebar({
                               <AlertTriangle className="h-5 w-5 text-yellow-500" />
                               <span>Active Alerts</span>
                               {alerts.length > 0 && (
-                                <div className="flex items-center gap-1.5">
+                                <div className="flex items-center -space-x-1.5">
                                   {alerts.filter(a => a.type === 'Warning').length > 0 && (
                                     <Tooltip>
                                       <TooltipTrigger>
-                                        <span className="px-2 py-0.5 text-sm bg-red-500/20 text-red-400 rounded-full">
+                                        <span className="w-6 h-6 flex items-center justify-center bg-red-500/20 text-red-400 rounded-full text-sm">
                                           {alerts.filter(a => a.type === 'Warning').length}
                                         </span>
                                       </TooltipTrigger>
@@ -343,7 +343,7 @@ export function Sidebar({
                                   {alerts.filter(a => a.type === 'Watch').length > 0 && (
                                     <Tooltip>
                                       <TooltipTrigger>
-                                        <span className="px-2 py-0.5 text-sm bg-orange-500/20 text-orange-400 rounded-full">
+                                        <span className="w-6 h-6 flex items-center justify-center bg-orange-500/20 text-orange-400 rounded-full text-sm">
                                           {alerts.filter(a => a.type === 'Watch').length}
                                         </span>
                                       </TooltipTrigger>
@@ -355,7 +355,7 @@ export function Sidebar({
                                   {alerts.filter(a => a.type === 'Advisory').length > 0 && (
                                     <Tooltip>
                                       <TooltipTrigger>
-                                        <span className="px-2 py-0.5 text-sm bg-yellow-500/20 text-yellow-400 rounded-full">
+                                        <span className="w-6 h-6 flex items-center justify-center bg-yellow-500/20 text-yellow-400 rounded-full text-sm">
                                           {alerts.filter(a => a.type === 'Advisory').length}
                                         </span>
                                       </TooltipTrigger>
@@ -367,7 +367,7 @@ export function Sidebar({
                                   {alerts.filter(a => a.type === 'Statement').length > 0 && (
                                     <Tooltip>
                                       <TooltipTrigger>
-                                        <span className="px-2 py-0.5 text-sm bg-blue-500/20 text-blue-400 rounded-full">
+                                        <span className="w-6 h-6 flex items-center justify-center bg-blue-500/20 text-blue-400 rounded-full text-sm">
                                           {alerts.filter(a => a.type === 'Statement').length}
                                         </span>
                                       </TooltipTrigger>

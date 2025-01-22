@@ -205,7 +205,7 @@ export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading, 
                 onClick={() => handleSiteClick(site)}
               >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <MapPin className="h-4 w-4 shrink-0" />
+                  
                   {editingSiteId === site.id ? (
                     <Input
                       value={editForm.name}
@@ -221,7 +221,7 @@ export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading, 
                           {site.alerts?.some(alert => alert.type === 'Warning') && (
                             <Tooltip>
                               <TooltipTrigger>
-                                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-500/20">
+                                <div className="flex items-center gap-1 px-2 py-1 rounded bg-red-500/20">
                                   <AlertTriangle className="h-3 w-3 text-red-400" />
                                   <span className="text-xs text-red-400">Warning</span>
                                 </div>
@@ -234,7 +234,7 @@ export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading, 
                           {site.alerts?.some(alert => alert.type === 'Watch') && (
                             <Tooltip>
                               <TooltipTrigger>
-                                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-orange-500/20">
+                                <div className="flex items-center gap-1 px-2 py-1 rounded bg-orange-500/20">
                                   <AlertTriangle className="h-3 w-3 text-orange-400" />
                                   <span className="text-xs text-orange-400">Watch</span>
                                 </div>
@@ -247,7 +247,7 @@ export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading, 
                           {site.alerts?.some(alert => alert.type === 'Advisory') && (
                             <Tooltip>
                               <TooltipTrigger>
-                                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-yellow-500/20">
+                                <div className="flex items-center gap-1 px-2 py-1 rounded bg-yellow-500/20">
                                   <AlertTriangle className="h-3 w-3 text-yellow-400" />
                                   <span className="text-xs text-yellow-400">Advisory</span>
                                 </div>
@@ -260,7 +260,7 @@ export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading, 
                           {site.alerts?.some(alert => alert.type === 'Statement') && (
                             <Tooltip>
                               <TooltipTrigger>
-                                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-500/20">
+                                <div className="flex items-center gap-1 px-2 py-1 rounded bg-blue-500/20">
                                   <AlertTriangle className="h-3 w-3 text-blue-400" />
                                   <span className="text-xs text-blue-400">Statement</span>
                                 </div>
