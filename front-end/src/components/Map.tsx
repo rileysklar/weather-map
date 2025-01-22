@@ -11,6 +11,7 @@ import { Sidebar } from './Sidebar';
 import { ProjectSitesList } from './ProjectSitesList';
 import { WeatherPopup } from './WeatherPopup';
 import { createRoot } from 'react-dom/client';
+import { weatherService, WeatherAlert } from '@/services/weather';
 
 if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
   throw new Error('Mapbox token is required');
@@ -20,6 +21,18 @@ mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 // Prevent multiple initializations during hot reloading
 let mapInstance: mapboxgl.Map | null = null;
+
+// Add type definition at the top of the file
+interface ProjectSite {
+  id: string;
+  name: string;
+  description: string;
+  polygon: {
+    type: "Polygon";
+    coordinates: number[][][];
+  };
+  alerts?: WeatherAlert[];
+}
 
 export default function Map() {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -49,19 +62,32 @@ export default function Map() {
 
   // Function to show weather popup
   const showWeatherPopup = async (lat: number, lng: number, locationName?: string) => {
-    console.log('🌍 Attempting to show weather popup:', { isProjectMode: projectModeRef.current, lat, lng });
+    console.log('🌍 Attempting to show weather popup:', { 
+      isProjectMode: projectModeRef.current, 
+      lat, 
+      lng,
+      mapInstance: !!mapInstance,
+      popupRef: !!popupRef.current
+    });
+
     if (!mapInstance || projectModeRef.current) {
-      console.log('❌ Weather popup blocked:', { reason: projectModeRef.current ? 'Project Mode Active' : 'No Map Instance' });
+      console.log('❌ Weather popup blocked:', { 
+        reason: projectModeRef.current ? 'Project Mode Active' : 'No Map Instance',
+        mapInstance: !!mapInstance,
+        projectMode: projectModeRef.current
+      });
       return;
     }
 
     try {
       // Remove existing popup if any
       if (popupRef.current) {
+        console.log('🧹 Removing existing popup');
         popupRef.current.remove();
       }
 
       // Create new popup
+      console.log('🎈 Creating new popup');
       popupRef.current = new mapboxgl.Popup({
         closeButton: true,
         closeOnClick: true,
@@ -75,25 +101,34 @@ export default function Map() {
       loadingDiv.textContent = 'Loading...';
 
       // Show loading state
+      console.log('⏳ Showing loading state');
       popupRef.current
         .setLngLat([lng, lat])
         .setDOMContent(loadingDiv)
         .addTo(mapInstance);
 
       // Fetch weather data
+      console.log('🌤️ Fetching weather data');
       const response = await fetch(`/api/weather?lat=${lat}&lon=${lng}`);
       
       if (!response.ok) {
+        console.error('❌ Weather API response not ok:', {
+          status: response.status,
+          statusText: response.statusText
+        });
         throw new Error(`Weather API error: ${response.status}`);
       }
       
       const weatherData = await response.json();
+      console.log('✅ Weather data received:', weatherData);
 
       // Create container for React component
+      console.log('🎨 Creating React component container');
       const container = document.createElement('div');
       const root = createRoot(container);
 
       // Render WeatherPopup component
+      console.log('🎭 Rendering WeatherPopup component');
       root.render(
         <WeatherPopup 
           weatherData={weatherData}
@@ -103,10 +138,13 @@ export default function Map() {
 
       // Update popup content
       if (popupRef.current) {
+        console.log('📝 Updating popup content');
         popupRef.current.setDOMContent(container);
+      } else {
+        console.warn('⚠️ Popup ref lost during weather data fetch');
       }
     } catch (error) {
-      console.error('❌ Error fetching weather:', error);
+      console.error('❌ Error in showWeatherPopup:', error);
       if (popupRef.current) {
         const errorDiv = document.createElement('div');
         errorDiv.className = 'p-4';
@@ -170,10 +208,23 @@ export default function Map() {
     const map = mapInstance as mapboxgl.Map;
     
     try {
-      const sites = await projectSitesService.getAll();
-      setProjectSites(sites);
+      const sites = await projectSitesService.getAll() as ProjectSite[];
       
-      sites.forEach((site) => {
+      // Fetch weather data for each site
+      const sitesWithWeather = await Promise.all(sites.map(async (site) => {
+        try {
+          const [longitude, latitude] = site.polygon.coordinates[0][0];
+          const weatherData = await weatherService.getWeatherData(latitude, longitude, site.name);
+          return { ...site, alerts: weatherData.alerts };
+        } catch (error) {
+          console.error(`Failed to fetch weather data for site ${site.name}:`, error);
+          return site;
+        }
+      }));
+
+      setProjectSites(sitesWithWeather);
+      
+      sitesWithWeather.forEach((site) => {
         const sourceId = `project-site-${site.id}`;
         
         // Remove existing layers and source if they exist
@@ -648,6 +699,7 @@ export default function Map() {
           onProjectSiteDelete={handleProjectSiteDelete}
           isOpen={isSidebarOpen}
           onOpenChange={setIsSidebarOpen}
+          setProjectSites={setProjectSites}
         />
         <div ref={mapContainer} className="w-full h-full" style={{ position: 'absolute' }} />
       </div>

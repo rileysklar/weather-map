@@ -59,11 +59,17 @@ interface GridpointForecast {
 }
 
 export interface WeatherAlert {
-  site: string;
-  validTime: string;
   type: 'Warning' | 'Watch' | 'Advisory' | 'Statement';
-  phenomenon: string;
   description: string;
+  site: string;
+  event: string;
+  severity: string;
+  certainty: string;
+  urgency: string;
+  onset: string;
+  ends: string;
+  instruction?: string;
+  phenomenon: string;
 }
 
 class WeatherService {
@@ -156,12 +162,22 @@ class WeatherService {
       hazard.value.forEach(value => {
         const type = this.hazardTypes[value.significance as keyof typeof this.hazardTypes];
         if (type) {
+          // Parse the validTime string which is in format "2024-05-10T12:00:00+00:00/2024-05-11T00:00:00+00:00"
+          const [onset, ends] = hazard.validTime.split('/');
+          
           alerts.push({
             site: siteName,
-            validTime: hazard.validTime,
             type,
             phenomenon: value.phenomenon,
-            description: this.getPhenomenonDescription(value.phenomenon)
+            description: this.getPhenomenonDescription(value.phenomenon),
+            event: this.getPhenomenonDescription(value.phenomenon),
+            // Default values for severity, certainty, and urgency based on type
+            severity: type === 'Warning' ? 'Severe' : type === 'Watch' ? 'Moderate' : 'Minor',
+            certainty: 'Likely',
+            urgency: type === 'Warning' ? 'Immediate' : type === 'Watch' ? 'Expected' : 'Future',
+            onset: onset,
+            ends: ends || onset, // If no end time, use onset time
+            instruction: `Take appropriate precautions for ${this.getPhenomenonDescription(value.phenomenon).toLowerCase()}.`
           });
         }
       });
