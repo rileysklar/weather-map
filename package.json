@@ -1,0 +1,27 @@
+{
+  "name": "poltimap",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "front-end",
+    "database"
+  ],
+  "scripts": {
+    "dev:front-end": "npm run dev --workspace=front-end",
+    "dev:database": "npm run dev --workspace=database",
+    "build:front-end": "npm run build --workspace=front-end",
+    "build:database": "npm run build --workspace=database",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.5",
+    "@radix-ui/react-tabs": "^1.1.2",
+    "aria-hidden": "^1.2.4",
+    "chart.js": "^4.4.7",
+    "react-chartjs-2": "^5.3.0"
+  }
+}

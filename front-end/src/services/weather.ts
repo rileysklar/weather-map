@@ -1,3 +1,5 @@
+import { weatherDatabaseService } from './weatherDatabase';
+
 interface WeatherPoint {
   properties: {
     forecast: string;
@@ -262,49 +264,111 @@ class WeatherService {
   /**
    * Get complete weather data for a location
    */
-  async getWeatherData(lat: number, lon: number, siteName: string) {
+  async getWeatherData(lat: number, lon: number, siteName: string, siteId: string) {
     try {
-      // Step 1: Get the weather point data
-      try {
-        const pointData = await this.getPoint(lat, lon);
-        
-        // Step 2: Get the forecast using the URL from the point data
-        const forecast = await this.getForecast(pointData.properties.forecast);
-        
-        // Step 3: Get the detailed gridpoint data
-        const gridpoint = await this.getGridpointForecast(
-          pointData.properties.gridId,
-          pointData.properties.gridX,
-          pointData.properties.gridY
-        );
+      const point = await this.getPoint(lat, lon);
+      const forecast = await this.getForecast(point.properties.forecast);
+      const gridpoint = await this.getGridpointForecast(
+        point.properties.gridId,
+        point.properties.gridX,
+        point.properties.gridY
+      );
 
-        // Parse hazards into a more usable format
-        const alerts = this.parseHazards(siteName, gridpoint.properties.hazards);
-        
-        return {
-          forecast: forecast.properties.periods,
-          gridpoint: gridpoint.properties,
-          point: pointData.properties,
-          alerts
-        };
-      } catch (error) {
-        // If we get a 404 error, it means the location is outside the USA
-        // Return data without alerts
-        if (error instanceof Error && error.message.includes('Weather API error')) {
-          return {
-            forecast: [],
-            gridpoint: null,
-            point: null,
-            alerts: []
-          };
-        }
-        throw error;
-      }
+      // Get current period from forecast
+      const currentPeriod = forecast.properties.periods[0];
+      
+      // Get alerts
+      const alerts = this.parseHazards(siteName, gridpoint.properties.hazards);
+      
+      // Calculate risk score based on weather conditions
+      const riskScore = this.calculateRiskScore(currentPeriod, alerts);
+      const { level: riskLevel, color: riskColor } = this.getRiskLevel(riskScore);
+
+      // Create weather data object
+      const weatherData = {
+        site_id: siteId,
+        temperature: currentPeriod.temperature,
+        precipitation_probability: currentPeriod.probabilityOfPrecipitation.value || 0,
+        wind_speed: currentPeriod.windSpeed,
+        alerts,
+        risk_score: riskScore,
+        risk_level: riskLevel,
+        risk_color: riskColor
+      };
+
+      // Store in database
+      await weatherDatabaseService.create(weatherData);
+
+      return {
+        ...weatherData,
+        forecast: forecast.properties.periods,
+      };
     } catch (error) {
       if (error instanceof Error) {
         throw new Error(`Failed to fetch weather data: ${error.message}`);
       }
       throw error;
+    }
+  }
+
+  private calculateRiskScore(
+    currentPeriod: WeatherForecast['properties']['periods'][0],
+    alerts: WeatherAlert[]
+  ): number {
+    let score = 0;
+    
+    // Temperature risk (extreme temperatures)
+    if (currentPeriod.temperature > 95 || currentPeriod.temperature < 32) {
+      score += 30;
+    } else if (currentPeriod.temperature > 85 || currentPeriod.temperature < 40) {
+      score += 15;
+    }
+    
+    // Precipitation risk
+    if (currentPeriod.probabilityOfPrecipitation.value) {
+      score += currentPeriod.probabilityOfPrecipitation.value * 0.3;
+    }
+    
+    // Wind risk
+    const windSpeed = parseInt(currentPeriod.windSpeed.split(' ')[0]);
+    if (windSpeed > 25) {
+      score += 30;
+    } else if (windSpeed > 15) {
+      score += 15;
+    }
+    
+    // Alert risk
+    alerts.forEach(alert => {
+      switch (alert.type) {
+        case 'Warning':
+          score += 40;
+          break;
+        case 'Watch':
+          score += 25;
+          break;
+        case 'Advisory':
+          score += 15;
+          break;
+        case 'Statement':
+          score += 5;
+          break;
+      }
+    });
+    
+    return Math.min(100, score);
+  }
+
+  private getRiskLevel(score: number): { level: string; color: string } {
+    if (score >= 80) {
+      return { level: 'Extreme', color: '#FF0000' };
+    } else if (score >= 60) {
+      return { level: 'High', color: '#FFA500' };
+    } else if (score >= 40) {
+      return { level: 'Moderate', color: '#FFFF00' };
+    } else if (score >= 20) {
+      return { level: 'Low', color: '#90EE90' };
+    } else {
+      return { level: 'Minimal', color: '#00FF00' };
     }
   }
 }

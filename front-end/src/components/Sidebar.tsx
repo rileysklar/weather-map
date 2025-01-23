@@ -45,6 +45,22 @@ interface SidebarProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   setProjectSites: React.Dispatch<React.SetStateAction<any[]>>;
+  projectWeather: Array<{
+    id: string;
+    project_site_id: string;
+    weather_data: {
+      forecast?: {
+        temperature: number;
+        precipitation_probability: number;
+        wind_speed: number;
+      };
+      alerts?: Array<{
+        type: string;
+        description: string;
+        severity: string;
+      }>;
+    };
+  }>;
 }
 
 export function Sidebar({
@@ -66,6 +82,7 @@ export function Sidebar({
   isOpen,
   onOpenChange,
   setProjectSites,
+  projectWeather,
 }: SidebarProps) {
   const [activeWeatherAlerts, setActiveWeatherAlerts] = useState<number>(2); // Placeholder count
   const [isAlertsVisible, setIsAlertsVisible] = useState(false);
@@ -584,7 +601,7 @@ export function Sidebar({
                               try {
                                 for (const site of projectSites) {
                                   const [longitude, latitude] = site.polygon.coordinates[0][0];
-                                  const weatherData = await weatherService.getWeatherData(latitude, longitude, site.name);
+                                  const weatherData = await weatherService.getWeatherData(latitude, longitude, site.name, site.id);
                                   handleWeatherAlerts(weatherData.alerts, site.name);
                                 }
                               } catch (error) {
@@ -598,7 +615,7 @@ export function Sidebar({
                                   try {
                                     for (const site of projectSites) {
                                       const [longitude, latitude] = site.polygon.coordinates[0][0];
-                                      const weatherData = await weatherService.getWeatherData(latitude, longitude, site.name);
+                                      const weatherData = await weatherService.getWeatherData(latitude, longitude, site.name, site.id);
                                       handleWeatherAlerts(weatherData.alerts, site.name);
                                     }
                                   } catch (error) {

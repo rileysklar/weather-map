@@ -12,6 +12,7 @@ import { ProjectSitesList } from './ProjectSitesList';
 import { WeatherPopup } from './WeatherPopup';
 import { createRoot } from 'react-dom/client';
 import { weatherService, WeatherAlert } from '@/services/weather';
+import { weatherDatabaseService } from '@/services/weatherDatabase';
 
 if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
   throw new Error('Mapbox token is required');
@@ -52,6 +53,22 @@ export default function Map() {
   const [currentPolygon, setCurrentPolygon] = useState<Array<{ id: string; coordinates: number[]; index: number }>>([]);
   const [projectSites, setProjectSites] = useState<any[]>([]);
   const [isLoadingSites, setIsLoadingSites] = useState(true);
+  const [projectWeather, setProjectWeather] = useState<Array<{
+    id: string;
+    project_site_id: string;
+    weather_data: {
+      forecast?: {
+        temperature: number;
+        precipitation_probability: number;
+        wind_speed: number;
+      };
+      alerts?: Array<{
+        type: string;
+        description: string;
+        severity: string;
+      }>;
+    };
+  }>>([]);
 
   // Update refs when states change
   useEffect(() => {
@@ -221,11 +238,33 @@ export default function Map() {
     try {
       const sites = await projectSitesService.getAll() as ProjectSite[];
       
+      // Clear previous weather data
+      setProjectWeather([]);
+      
       // Fetch weather data for each site
       const sitesWithWeather = await Promise.all(sites.map(async (site) => {
         try {
           const [longitude, latitude] = site.polygon.coordinates[0][0];
-          const weatherData = await weatherService.getWeatherData(latitude, longitude, site.name);
+          const weatherData = await weatherService.getWeatherData(latitude, longitude, site.name, site.id);
+          
+          // Add to project weather with generated ID
+          setProjectWeather(prev => [...prev, {
+            id: `weather-${site.id}-${Date.now()}`,
+            project_site_id: site.id,
+            weather_data: {
+              forecast: {
+                temperature: weatherData.temperature,
+                precipitation_probability: weatherData.precipitation_probability,
+                wind_speed: parseInt(weatherData.wind_speed)
+              },
+              alerts: weatherData.alerts.map(alert => ({
+                type: alert.type,
+                description: alert.description,
+                severity: alert.severity
+              }))
+            }
+          }]);
+
           return { ...site, alerts: weatherData.alerts };
         } catch (error) {
           // Only log errors that aren't related to non-US locations
@@ -242,165 +281,65 @@ export default function Map() {
 
       setProjectSites(sitesWithWeather);
       
-      sitesWithWeather.forEach((site) => {
-        const sourceId = `project-site-${site.id}`;
-        
-        // Remove existing layers and sources if they exist
-        if (map.getLayer(`${sourceId}-fill`)) {
-          map.removeLayer(`${sourceId}-fill`);
-        }
-        if (map.getLayer(`${sourceId}-outline`)) {
-          map.removeLayer(`${sourceId}-outline`);
-        }
-        if (map.getLayer(`${sourceId}-alert-marker`)) {
-          map.removeLayer(`${sourceId}-alert-marker`);
-        }
-        const alertSourceId = `${sourceId}-alert`;
-        if (map.getLayer(alertSourceId)) {
-          map.removeLayer(alertSourceId);
-        }
-        if (map.getSource(alertSourceId)) {
-          map.removeSource(alertSourceId);
-        }
-        if (map.getSource(sourceId)) {
-          map.removeSource(sourceId);
-        }
-
-        // Add source and layers
-        map.addSource(sourceId, {
+      // Add source and layer for project sites if they don't exist
+      if (!map.getSource('project-sites')) {
+        map.addSource('project-sites', {
           type: 'geojson',
           data: {
+            type: 'FeatureCollection',
+            features: sitesWithWeather.map(site => ({
+              type: 'Feature',
+              geometry: site.polygon,
+              properties: {
+                id: site.id,
+                name: site.name,
+                description: site.description,
+                hasAlerts: site.alerts && site.alerts.length > 0
+              }
+            }))
+          }
+        });
+
+        map.addLayer({
+          id: 'project-sites',
+          type: 'fill',
+          source: 'project-sites',
+          paint: {
+            'fill-color': [
+              'case',
+              ['get', 'hasAlerts'], '#ff0000',
+              '#0080ff'
+            ],
+            'fill-opacity': 0.5
+          }
+        });
+
+        map.addLayer({
+          id: 'project-sites-outline',
+          type: 'line',
+          source: 'project-sites',
+          paint: {
+            'line-color': '#000',
+            'line-width': 1
+          }
+        });
+      } else {
+        // Update existing source
+        const source = map.getSource('project-sites') as mapboxgl.GeoJSONSource;
+        source.setData({
+          type: 'FeatureCollection',
+          features: sitesWithWeather.map(site => ({
             type: 'Feature',
             geometry: site.polygon,
             properties: {
               id: site.id,
               name: site.name,
               description: site.description,
-              hasAlerts: site.alerts && site.alerts.length > 0,
-              alertTypes: site.alerts?.map(a => a.type).join(', '),
-              alertCount: site.alerts?.length || 0
+              hasAlerts: site.alerts && site.alerts.length > 0
             }
-          }
+          }))
         });
-
-        // Add fill layer
-        map.addLayer({
-          id: `${sourceId}-fill`,
-          type: 'fill',
-          source: sourceId,
-          paint: {
-            'fill-color': '#3b82f6',
-            'fill-opacity': 0.2
-          }
-        });
-
-        // Add outline layer
-        map.addLayer({
-          id: `${sourceId}-outline`,
-          type: 'line',
-          source: sourceId,
-          paint: {
-            'line-color': '#3b82f6',
-            'line-width': 2
-          }
-        });
-
-        // Add alert marker if site has alerts
-        if (site.alerts && site.alerts.length > 0) {
-          // Get the center point of the polygon
-          const [centerLng, centerLat] = site.polygon.coordinates[0][0];
-          
-          // Get the most severe alert type
-          const getAlertPriority = (type: string) => {
-            switch (type) {
-              case 'Warning': return 1;
-              case 'Watch': return 2;
-              case 'Advisory': return 3;
-              case 'Statement': return 4;
-              default: return 5;
-            }
-          };
-
-          // Sort alerts by priority and get the most severe one
-          const sortedAlerts = [...site.alerts].sort((a, b) => 
-            getAlertPriority(a.type) - getAlertPriority(b.type)
-          );
-          const mostSevereAlert = sortedAlerts[0];
-          
-          // Create a point source for the alert marker
-          map.addSource(alertSourceId, {
-            type: 'geojson',
-            data: {
-              type: 'Feature',
-              geometry: {
-                type: 'Point',
-                coordinates: [centerLng, centerLat]
-              },
-              properties: {
-                siteId: site.id,
-                siteName: site.name,
-                alertCount: site.alerts.length,
-                alertTypes: mostSevereAlert.type,
-                alertDescription: mostSevereAlert.description
-              }
-            }
-          });
-
-          // Add the alert marker layer
-          map.addLayer({
-            id: `${sourceId}-alert-marker`,
-            type: 'symbol',
-            source: alertSourceId,
-            layout: {
-              'text-field': ['format',
-                ['get', 'siteName'], { 'font-scale': 1.2 },
-                '\n',
-                ['get', 'alertTypes'], { 'font-scale': 0.9, 'text-color': [
-                  'match',
-                  ['get', 'alertTypes'],
-                  'Warning', '#ef4444',  // Red for Warning
-                  'Watch', '#f97316',    // Orange for Watch
-                  'Advisory', '#eab308',  // Yellow for Advisory
-                  'Statement', '#3b82f6', // Blue for Statement
-                  '#ffffff'  // Default white
-                ] }
-              ],
-              'text-size': 14,
-              'text-allow-overlap': true,
-              'text-anchor': 'center',
-              'text-max-width': 12,
-              'text-line-height': 1.3,
-              'text-justify': 'center'
-            },
-            paint: {
-              'text-color': '#ffffff',
-              'text-halo-color': '#000000',
-              'text-halo-width': 1
-            }
-          });
-
-          // Add hover effect and click handler
-          map.on('mouseenter', `${sourceId}-alert-marker`, () => {
-            map.getCanvas().style.cursor = 'pointer';
-          });
-
-          map.on('mouseleave', `${sourceId}-alert-marker`, () => {
-            map.getCanvas().style.cursor = '';
-          });
-
-          // Add click handler to zoom to the site
-          map.on('click', `${sourceId}-alert-marker`, (e) => {
-            if (e.features && e.features[0]) {
-              const feature = e.features[0];
-              const siteId = feature.properties?.siteId;
-              const clickedSite = sitesWithWeather.find(s => s.id === siteId);
-              if (clickedSite) {
-                handleProjectSiteClick(clickedSite);
-              }
-            }
-          });
-        }
-      });
+      }
     } catch (error) {
       console.error('Error loading project sites:', error);
     } finally {
@@ -831,6 +770,7 @@ export default function Map() {
           isOpen={isSidebarOpen}
           onOpenChange={setIsSidebarOpen}
           setProjectSites={setProjectSites}
+          projectWeather={projectWeather}
         />
         <div ref={mapContainer} className="w-full h-full" style={{ position: 'absolute' }} />
       </div>

@@ -13,6 +13,14 @@ const blackOpsOne = Black_Ops_One({
 export const metadata: Metadata = {
   title: "MapShield - Mapping Protection, One Asset at a Time",
   description: "MapShield is your go-to solution for protecting valuable assets, like solar panels, from unpredictable events like hailstorms and extreme weather. By combining real-time mapping technology with advanced safety protocols, MapGuard helps you monitor, safeguard, and secure your investments. Whether you're at home or on the go, our app provides you with a reliable shield against the unexpected, giving you peace of mind knowing that your assets are always protected.",
+  icons: {
+    icon: [
+      {
+        url: '/ms-logo.svg',
+        type: 'image/svg+xml',
+      }
+    ]
+  }
 };
 
 export default function RootLayout({

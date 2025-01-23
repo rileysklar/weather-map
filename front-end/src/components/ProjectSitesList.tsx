@@ -121,7 +121,7 @@ export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading, 
       console.log('🎯 Fetching weather data for:', site.name);
       console.log('📍 Coordinates:', { latitude, longitude });
       
-      const weatherData = await weatherService.getWeatherData(latitude, longitude, site.name);
+      const weatherData = await weatherService.getWeatherData(latitude, longitude, site.name, site.id);
       
       console.log('🌤️ Weather Data:', {
         alerts: weatherData.alerts,
