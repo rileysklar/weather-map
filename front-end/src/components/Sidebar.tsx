@@ -27,6 +27,7 @@ import { weatherService } from '@/services/weather';
 import { SettingsPanel } from './SettingsPanel';
 import { ActiveAlertsList } from './ActiveAlertsList';
 import { TabsContent } from '@/components/ui/tabs';
+import { HistoricalWeatherChart } from '@/components/HistoricalWeatherChart';
 
 interface SidebarProps {
   searchValue: string;
@@ -96,6 +97,7 @@ export function Sidebar({
     advisories: true,
     statements: true
   });
+  const [expandedSites, setExpandedSites] = useState<Record<string, boolean>>({});
 
   // Use provided alertPreferences or default to local state
   const effectiveAlertPreferences = alertPreferences || alertPreferencesState;
@@ -535,21 +537,26 @@ export function Sidebar({
                             />
                           </button>
                           {isHistoryVisible && (
-                            <div id="historical-data-content" className="space-y-2 text-white/80">
-                              <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
-                                <p className="font-medium flex items-center gap-2">
-                                  <Cloud className="h-4 w-4" aria-hidden="true" />
-                                  Precipitation Trends
-                                </p>
-                                <p className="text-sm mt-1">30% above average for May</p>
-                              </div>
-                              <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
-                                <p className="font-medium">Recent Events</p>
-                                <div className="mt-2 text-sm space-y-1" role="list">
-                                  <p role="listitem">• Heavy rainfall event (Apr 15)</p>
-                                  <p role="listitem">• High wind advisory (Apr 2)</p>
+                            <div id="historical-data-content" className="space-y-4">
+                              {projectSites.map((site) => (
+                                <div key={site.id} className="bg-white/5 rounded-lg overflow-hidden">
+                                  <button
+                                    className="w-full flex items-center justify-between p-3 hover:bg-white/10 transition-colors duration-200"
+                                    onClick={() => setExpandedSites(prev => ({ ...prev, [site.id]: !prev[site.id] }))}
+                                  >
+                                    <span className="text-lg font-medium p-2 text-white">{site.name}</span>
+                                    <ChevronDown 
+                                      className={`w-4 h-4 transition-transform duration-200 ${expandedSites[site.id] ? 'rotate-180' : ''}`}
+                                      aria-hidden="true"
+                                    />
+                                  </button>
+                                  {expandedSites[site.id] && (
+                                    <div className="p-3 pt-0">
+                                      <HistoricalWeatherChart siteId={site.id} days={7} />
+                                    </div>
+                                  )}
                                 </div>
-                              </div>
+                              ))}
                             </div>
                           )}
                         </div>

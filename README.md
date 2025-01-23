@@ -1,142 +1,138 @@
-# Weather Map Application
+# MapShield - Weather Risk Assessment Platform
 
-A modern weather visualization application that combines real-time weather data from the National Weather Service API with an interactive map interface. The project uses a monorepo structure separating the front-end application from the database layer.
+MapShield is a sophisticated web application that helps organizations monitor and assess weather-related risks for their project sites across the United States. The platform combines interactive mapping, real-time weather data, and comprehensive risk assessment tools to provide actionable insights for asset protection.
 
-## Features
+## Core Features
 
-- Interactive map interface with Mapbox GL
-- Real-time weather data visualization
-- Location search functionality
-- Weather data caching using Supabase
-- Responsive design for all devices
+### Interactive Map Interface
+- **Dynamic Map Navigation**: Pan, zoom, and explore project sites across the United States
+- **Site Visualization**: 
+  - Project sites displayed with custom polygons
+  - Color-coded based on alert status (blue for normal, red for active alerts)
+  - Site names always visible for easy identification
+  - Active weather alerts displayed beneath site names
 
-## Project Structure
+### Project Site Management
+- **Site Creation**:
+  - Interactive polygon drawing tool
+  - Custom site naming and description
+  - Automatic coordinate capture
+- **Site Editing**:
+  - Update site names and descriptions
+  - Immediate UI updates across all components
+- **Site Deletion**:
+  - Remove sites with confirmation
+  - Automatic cleanup of associated weather data
 
-```
-weather-map/
-├── frontend/           # Next.js application
-│   ├── src/
-│   └── ...
-├── database/          # Supabase and PostGIS
-│   ├── migrations/
-│   ├── types/
-│   └── scripts/
-└── README.md
-```
+### Weather Monitoring
+- **Real-time Weather Data**:
+  - Temperature readings
+  - Precipitation probability
+  - Wind speed measurements
+  - Active weather alerts
+- **Weather Popup**:
+  - Click anywhere on map for instant weather information
+  - Option to create new project site from location
+- **Location Search**:
+  - Search for specific locations
+  - Automatic map centering and weather display
 
-## Prerequisites
+### Risk Assessment
+- **Comprehensive Risk Analysis**:
+  - Weather alert severity evaluation
+  - Precipitation risk assessment
+  - Wind damage probability
+  - Combined risk score calculation
+- **Visual Risk Indicators**:
+  - Risk level badges (Low to Severe)
+  - Radar charts for risk factor breakdown
+  - Progress bars for risk scores
+- **Alert Management**:
+  - Configurable alert preferences
+  - Filter by warning types (Warnings, Watches, Advisories, Statements)
+  - Expandable alert details
 
-- Node.js (v18 or later)
-- Docker
-- Supabase CLI
-- Git
+### Active Alerts Dashboard
+- **Alert Overview**:
+  - Real-time alert monitoring
+  - Alert type categorization
+  - Severity indicators
+  - Site-specific alert tracking
+- **Alert Navigation**:
+  - Click-through to affected sites
+  - Automatic map centering on alert locations
+  - Quick access to detailed risk assessments
+
+### User Interface
+- **Responsive Sidebar**:
+  - Collapsible interface
+  - Project site listing
+  - Risk assessment views
+  - Alert monitoring
+- **Search Functionality**:
+  - Location-based search
+  - Site name search
+  - Alert filtering
+- **Dynamic Updates**:
+  - Real-time data refresh
+  - Immediate UI feedback
+  - Smooth transitions and animations
+
+## Technical Features
+- Built with Next.js and React
+- Mapbox GL JS for mapping functionality
+- OpenWeather API integration
+- Supabase backend for data storage
+- TypeScript for type safety
+- Tailwind CSS for styling
+
+## Data Integration
+- **Weather Data**:
+  - OpenWeather API for current conditions
+  - NOAA integration for weather alerts
+  - Automatic data updates
+- **Geospatial Data**:
+  - Custom polygon support
+  - Coordinate system management
+  - Boundary calculations
+
+## Security Features
+- Environment variable protection
+- API key management
+- Secure data storage
+- Error handling and validation
 
 ## Getting Started
 
-### 1. Database Setup (Supabase)
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Set up environment variables:
+   ```env
+   NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_token
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
+   ```
+4. Run the development server:
+   ```bash
+   npm run dev
+   ```
 
-```bash
-# Install Supabase CLI
-npm install supabase --save-dev
+## Environment Requirements
+- Node.js 16+
+- NPM or Yarn
+- Modern web browser with WebGL support
+- Internet connection for API access
 
-# Initialize Supabase project in the database directory
-cd database
-npx supabase init
-
-# Start Supabase services locally
-npx supabase start
-
-# Generate database types
-npx supabase gen types typescript --local > ../frontend/src/types/database.ts
-```
-
-### 2. Frontend Setup
-
-```bash
-# Install dependencies
-cd frontend
-npm install
-
-# Set up environment variables
-cp .env.example .env.local
-
-# Start development server
-npm run dev
-```
-
-## Environment Variables
-
-### Frontend (.env.local)
-```
-NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_token
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
-
-### Database (.env)
-```
-SUPABASE_DB_HOST=localhost
-SUPABASE_DB_PORT=5432
-SUPABASE_DB_NAME=postgres
-SUPABASE_DB_USER=postgres
-SUPABASE_DB_PASSWORD=postgres
-```
-
-## Development
-
-### Database Migrations
-
-```bash
-cd database
-npx supabase migration new my_migration
-npx supabase migration up
-```
-
-### Type Generation
-
-```bash
-npx supabase gen types typescript --local > ../frontend/src/types/database.ts
-```
-
-## API Integration
-
-The application integrates with the National Weather Service API to fetch real-time weather data. Key endpoints used:
-
-- `/points/{lat},{lon}` - Get metadata for a location
-- `/gridpoints/{office}/{grid x},{grid y}/forecast` - Get forecast data
-- `/gridpoints/{office}/{grid x},{grid y}/forecast/hourly` - Get hourly forecast
-
-## Deployment
-
-### Database
-```bash
-cd database
-npx supabase db push
-```
-
-### Frontend
-```bash
-cd frontend
-npm run build
-npm run start
-```
+## API Dependencies
+- Mapbox GL JS
+- OpenWeather API
+- Supabase
 
 ## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Contributions are welcome! Please read our contributing guidelines for details on our code of conduct and the process for submitting pull requests.
 
 ## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- National Weather Service API
-- Mapbox GL JS
-- Supabase
-- Next.js team
-- PostGIS contributors 
+This project is licensed under the MIT License - see the LICENSE file for details. 

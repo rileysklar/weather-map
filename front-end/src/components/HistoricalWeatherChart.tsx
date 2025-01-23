@@ -78,31 +78,60 @@ export function HistoricalWeatherChart({ siteId, days = 7 }: HistoricalWeatherCh
     );
   }
 
-  // Prepare data for charts
-  const dates = historicalData.map(data => 
-    new Date(data.created_at).toLocaleDateString()
+  // Group and average data by date
+  const groupedData = historicalData.reduce<{ [date: string]: {
+    temperature: number[];
+    precipitation: number[];
+    risk: number[];
+    count: number;
+  }}>((acc, data) => {
+    const date = new Date(data.created_at).toLocaleDateString();
+    if (!acc[date]) {
+      acc[date] = {
+        temperature: [],
+        precipitation: [],
+        risk: [],
+        count: 0
+      };
+    }
+    acc[date].temperature.push(data.temperature);
+    acc[date].precipitation.push(data.precipitation_probability);
+    acc[date].risk.push(data.risk_score);
+    acc[date].count++;
+    return acc;
+  }, {});
+
+  // Calculate daily averages
+  const dates = Object.keys(groupedData).sort((a, b) => 
+    new Date(a).getTime() - new Date(b).getTime()
   );
+  
+  const averages = dates.map(date => ({
+    temperature: groupedData[date].temperature.reduce((a, b) => a + b, 0) / groupedData[date].count,
+    precipitation: groupedData[date].precipitation.reduce((a, b) => a + b, 0) / groupedData[date].count,
+    risk: groupedData[date].risk.reduce((a, b) => a + b, 0) / groupedData[date].count
+  }));
 
   const chartData: ChartData<'line'> = {
     labels: dates,
     datasets: [
       {
         label: 'Temperature (°F)',
-        data: historicalData.map(data => data.temperature),
+        data: averages.map(avg => avg.temperature),
         borderColor: 'rgb(255, 99, 132)',
         backgroundColor: 'rgba(255, 99, 132, 0.5)',
         tension: 0.3
       },
       {
         label: 'Precipitation Probability (%)',
-        data: historicalData.map(data => data.precipitation_probability),
+        data: averages.map(avg => avg.precipitation),
         borderColor: 'rgb(53, 162, 235)',
         backgroundColor: 'rgba(53, 162, 235, 0.5)',
         tension: 0.3
       },
       {
         label: 'Risk Score',
-        data: historicalData.map(data => data.risk_score),
+        data: averages.map(avg => avg.risk),
         borderColor: 'rgb(75, 192, 192)',
         backgroundColor: 'rgba(75, 192, 192, 0.5)',
         tension: 0.3
@@ -116,14 +145,33 @@ export function HistoricalWeatherChart({ siteId, days = 7 }: HistoricalWeatherCh
     plugins: {
       legend: {
         position: 'top' as const,
+        align: 'start' as const,
         labels: {
-          color: 'white'
-        }
+          color: 'white',
+          padding: 16,
+          boxWidth: 40,
+          boxHeight: 3,
+          useBorderRadius: true,
+          borderRadius: 2
+        },
+        margin: 24,
+        maxWidth: 800,
+        itemGap: 24,
+        bottom: 12
       },
       title: {
         display: true,
         text: 'Historical Weather Trends',
-        color: 'white'
+        color: 'white',
+        align: 'start' as const,
+        padding: {
+          top: 0,
+          bottom: 8
+        },
+        font: {
+          size: 16,
+          weight: 'normal' as const
+        }
       }
     },
     scales: {
@@ -132,7 +180,8 @@ export function HistoricalWeatherChart({ siteId, days = 7 }: HistoricalWeatherCh
           color: 'rgba(255, 255, 255, 0.1)'
         },
         ticks: {
-          color: 'white'
+          color: 'white',
+          padding: 8
         }
       },
       y: {
@@ -140,15 +189,16 @@ export function HistoricalWeatherChart({ siteId, days = 7 }: HistoricalWeatherCh
           color: 'rgba(255, 255, 255, 0.1)'
         },
         ticks: {
-          color: 'white'
+          color: 'white',
+          padding: 8
         }
       }
     }
   };
 
   return (
-    <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-      <div className="h-[400px]">
+    <div className="">
+      <div className="h-[400px] mt-2">
         <Line data={chartData} options={options} />
       </div>
       <div className="mt-4 space-y-2">
