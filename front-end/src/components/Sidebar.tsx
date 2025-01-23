@@ -355,6 +355,7 @@ export function Sidebar({
                                 isLoading={isLoadingSites}
                                 onSiteDelete={onProjectSiteDelete}
                                 onWeatherAlerts={(newAlerts, siteName) => handleWeatherAlerts(newAlerts, siteName)}
+                                setProjectSites={setProjectSites}
                               />
                             </div>
                           )}

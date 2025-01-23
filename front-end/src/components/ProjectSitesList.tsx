@@ -40,9 +40,17 @@ interface ProjectSitesListProps {
   isLoading: boolean;
   onSiteDelete: (siteId: string) => void;
   onWeatherAlerts: (alerts: WeatherAlert[], siteName: string) => void;
+  setProjectSites: React.Dispatch<React.SetStateAction<ProjectSite[]>>;
 }
 
-export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading, onSiteDelete, onWeatherAlerts }: ProjectSitesListProps) {
+export function ProjectSitesList({ 
+  sites: initialSites, 
+  onSiteClick, 
+  isLoading, 
+  onSiteDelete, 
+  onWeatherAlerts,
+  setProjectSites 
+}: ProjectSitesListProps) {
   const [expandedSiteId, setExpandedSiteId] = useState<string | null>(null);
   const [editingSiteId, setEditingSiteId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ name: '', description: '' });
@@ -76,7 +84,18 @@ export function ProjectSitesList({ sites: initialSites, onSiteClick, isLoading, 
         description: editForm.description,
       });
       const typedUpdatedSite = updatedSite as ProjectSite;
-      setSites(sites.map(s => s.id === site.id ? { ...s, ...typedUpdatedSite } : s));
+      
+      // Update local state
+      setSites(prevSites => 
+        prevSites.map(s => s.id === site.id ? { ...s, ...typedUpdatedSite } : s)
+      );
+      
+      // Update parent state
+      setProjectSites(prevSites => 
+        prevSites.map(s => s.id === site.id ? { ...s, ...typedUpdatedSite } : s)
+      );
+      
+      // Reset edit state
       setEditingSiteId(null);
       setEditForm({ name: '', description: '' });
     } catch (error) {
