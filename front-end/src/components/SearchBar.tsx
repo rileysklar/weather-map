@@ -36,15 +36,16 @@ export function SearchBar({ value, onChange, onSearch, isLoading, error }: Searc
       setIsLoadingSuggestions(true);
       try {
         const response = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-            value
-          )}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&types=place,region,country&limit=5`
+          `/api/geocode?q=${encodeURIComponent(value)}`
         );
 
         if (!response.ok) throw new Error('Failed to fetch suggestions');
 
         const data = await response.json();
-        setSuggestions(data.features);
+        setSuggestions(data.map((location: any) => ({
+          place_name: `${location.name}, ${location.state || ''} ${location.country}`.trim(),
+          center: [location.lon, location.lat]
+        })));
       } catch (error) {
         console.error('Error fetching suggestions:', error);
       } finally {

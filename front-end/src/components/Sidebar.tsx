@@ -14,6 +14,7 @@ import { SearchBar } from './SearchBar';
 import ProjectSiteForm from './ProjectSiteForm';
 import { ProjectSitesList } from './ProjectSitesList';
 import { WeatherAlert } from '@/services/weather';
+import { RiskAssessment } from './risk-assessment/RiskAssessment';
 import {
   Tooltip,
   TooltipContent,
@@ -25,13 +26,14 @@ import { projectImportService } from '@/services/projectImport';
 import { weatherService } from '@/services/weather';
 import { SettingsPanel } from './SettingsPanel';
 import { ActiveAlertsList } from './ActiveAlertsList';
+import { TabsContent } from '@/components/ui/tabs';
 
 interface SidebarProps {
   searchValue: string;
   onSearchChange: (value: string) => void;
-  onSearch: (value: string) => void;
-  isLoading?: boolean;
-  error?: string | null;
+  onSearch: (searchQuery: string) => void;
+  isLoading: boolean;
+  error: string | null;
   isProjectMode: boolean;
   isDrawing: boolean;
   currentPolygon: Array<{ id: string; coordinates: number[]; index: number }>;
@@ -45,22 +47,15 @@ interface SidebarProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   setProjectSites: React.Dispatch<React.SetStateAction<any[]>>;
-  projectWeather: Array<{
-    id: string;
-    project_site_id: string;
-    weather_data: {
-      forecast?: {
-        temperature: number;
-        precipitation_probability: number;
-        wind_speed: number;
-      };
-      alerts?: Array<{
-        type: string;
-        description: string;
-        severity: string;
-      }>;
-    };
-  }>;
+  projectWeather: any[];
+  setProjectWeather: React.Dispatch<React.SetStateAction<any[]>>;
+  onNavigateToSite: (siteId: string) => void;
+  alertPreferences: {
+    warnings: boolean;
+    watches: boolean;
+    advisories: boolean;
+    statements: boolean;
+  };
 }
 
 export function Sidebar({
@@ -83,6 +78,9 @@ export function Sidebar({
   onOpenChange,
   setProjectSites,
   projectWeather,
+  setProjectWeather,
+  onNavigateToSite,
+  alertPreferences,
 }: SidebarProps) {
   const [activeWeatherAlerts, setActiveWeatherAlerts] = useState<number>(2); // Placeholder count
   const [isAlertsVisible, setIsAlertsVisible] = useState(false);
@@ -91,13 +89,16 @@ export function Sidebar({
   const [isProjectsVisible, setIsProjectsVisible] = useState(false);
   const [alerts, setAlerts] = useState<WeatherAlert[]>([]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [alertPreferences, setAlertPreferences] = useState({
+  const [expandedAlertId, setExpandedAlertId] = useState<string | null>(null);
+  const [alertPreferencesState, setAlertPreferencesState] = useState({
     warnings: true,
     watches: true,
     advisories: true,
     statements: true
   });
-  const [expandedAlertId, setExpandedAlertId] = useState<string | null>(null);
+
+  // Use provided alertPreferences or default to local state
+  const effectiveAlertPreferences = alertPreferences || alertPreferencesState;
 
   // Update alerts when project sites change
   useEffect(() => {
@@ -155,9 +156,12 @@ export function Sidebar({
   const handleWeatherAlerts = (newAlerts: WeatherAlert[], siteName: string) => {
     // Update alerts
     setAlerts(prevAlerts => {
+      // Remove all alerts for this site first
+      const otherSiteAlerts = prevAlerts.filter(alert => !alert.site.includes(siteName));
+      
       // Create a map of existing alerts using description and type as the key
       const existingAlerts = new Map(
-        prevAlerts.map(alert => [
+        otherSiteAlerts.map(alert => [
           `${alert.description}-${alert.type}`,
           alert
         ])
@@ -168,14 +172,14 @@ export function Sidebar({
         const key = `${alert.description}-${alert.type}`;
         // Only update if the alert doesn't exist or if it's from a different site
         if (!existingAlerts.has(key)) {
-          existingAlerts.set(key, alert);
+          existingAlerts.set(key, { ...alert, site: siteName });
         } else {
           // If we already have this alert type, append the site name if it's different
           const existingAlert = existingAlerts.get(key)!;
-          if (!existingAlert.site.includes(alert.site)) {
+          if (!existingAlert.site.includes(siteName)) {
             existingAlerts.set(key, {
               ...existingAlert,
-              site: `${existingAlert.site}, ${alert.site}`
+              site: `${existingAlert.site}, ${siteName}`
             });
           }
         }
@@ -189,25 +193,46 @@ export function Sidebar({
     });
 
     // Update project sites with their alerts
-    setProjectSites(prevSites => 
-      prevSites.map(site => 
+    setProjectSites(prevSites => {
+      const updatedSites = prevSites.map(site => 
         site.name === siteName
           ? { ...site, alerts: newAlerts }
           : site
-      )
-    );
+      );
+      
+      // Update project weather data to match the new site data
+      const updatedWeather = projectWeather.map(pw => {
+        const site = updatedSites.find(s => s.id === pw.project_site_id);
+        if (site) {
+          return {
+            ...pw,
+            site_name: site.name,
+            weather_data: {
+              ...pw.weather_data,
+              alerts: site.alerts
+            }
+          };
+        }
+        return pw;
+      });
+      
+      // Update project weather state
+      setProjectWeather(updatedWeather);
+      
+      return updatedSites;
+    });
   };
 
   const filteredAlerts = alerts.filter(alert => {
     switch (alert.type) {
       case 'Warning':
-        return alertPreferences.warnings;
+        return effectiveAlertPreferences.warnings;
       case 'Watch':
-        return alertPreferences.watches;
+        return effectiveAlertPreferences.watches;
       case 'Advisory':
-        return alertPreferences.advisories;
+        return effectiveAlertPreferences.advisories;
       case 'Statement':
-        return alertPreferences.statements;
+        return effectiveAlertPreferences.statements;
       default:
         return true;
     }
@@ -438,11 +463,13 @@ export function Sidebar({
                           </button>
                           {isAlertsVisible && (
                             <div id="alerts-content">
-                              <ActiveAlertsList
+                              <ActiveAlertsList 
                                 alerts={alerts}
-                                alertPreferences={alertPreferences}
+                                alertPreferences={effectiveAlertPreferences}
                                 expandedAlertId={expandedAlertId}
                                 onExpandAlert={setExpandedAlertId}
+                                onNavigateToSite={onNavigateToSite}
+                                projectWeather={projectWeather}
                               />
                             </div>
                           )}
@@ -472,25 +499,14 @@ export function Sidebar({
                             />
                           </button>
                           {isRiskVisible && (
-                            <div id="risk-assessment-content" className="space-y-2 text-white/80">
-                              <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
-                                <div className="flex justify-between items-center">
-                                  <p className="font-medium">Flood Risk Index</p>
-                                  <span className="text-yellow-500">Moderate</span>
-                                </div>
-                                <div className="mt-2 h-2 bg-white/10 rounded-full overflow-hidden" role="progressbar" aria-valuenow={60} aria-valuemin={0} aria-valuemax={100}>
-                                  <div className="h-full w-[60%] bg-yellow-500 rounded-full" />
-                                </div>
-                              </div>
-                              <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
-                                <div className="flex justify-between items-center">
-                                  <p className="font-medium">Wind Damage Risk</p>
-                                  <span className="text-green-500">Low</span>
-                                </div>
-                                <div className="mt-2 h-2 bg-white/10 rounded-full overflow-hidden" role="progressbar" aria-valuenow={30} aria-valuemin={0} aria-valuemax={100}>
-                                  <div className="h-full w-[30%] bg-green-500 rounded-full" />
-                                </div>
-                              </div>
+                            <div id="risk-assessment-content">
+                              <RiskAssessment 
+                                projectWeather={projectWeather} 
+                                onNavigateToSite={(siteId) => {
+                                  setIsRiskVisible(true);
+                                  onNavigateToSite?.(siteId);
+                                }} 
+                              />
                             </div>
                           )}
                         </div>
@@ -555,8 +571,8 @@ export function Sidebar({
                 <SettingsPanel
                   isOpen={isSettingsOpen}
                   onClose={() => setIsSettingsOpen(false)}
-                  alertPreferences={alertPreferences}
-                  onAlertPreferencesChange={setAlertPreferences}
+                  alertPreferences={effectiveAlertPreferences}
+                  onAlertPreferencesChange={(newPreferences) => setAlertPreferencesState(newPreferences)}
                 />
 
                 {!isProjectMode && (

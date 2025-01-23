@@ -46,6 +46,12 @@ export default function Map() {
   const [error, setError] = useState<string | null>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [alertPreferences, setAlertPreferences] = useState({
+    warnings: true,
+    watches: true,
+    advisories: true,
+    statements: true
+  });
   
   // Project site state
   const [isProjectMode, setIsProjectMode] = useState(false);
@@ -56,6 +62,7 @@ export default function Map() {
   const [projectWeather, setProjectWeather] = useState<Array<{
     id: string;
     project_site_id: string;
+    site_name: string;
     weather_data: {
       forecast?: {
         temperature: number;
@@ -124,7 +131,7 @@ export default function Map() {
         .setDOMContent(loadingDiv)
         .addTo(mapInstance);
 
-      // Fetch weather data
+      // Fetch weather data from OpenWeather API
       console.log('🌤️ Fetching weather data');
       const response = await fetch(`/api/weather?lat=${lat}&lon=${lng}`);
       
@@ -148,7 +155,7 @@ export default function Map() {
       console.log('🎭 Rendering WeatherPopup component');
       root.render(
         <WeatherPopup 
-          weatherData={weatherData} 
+          weatherData={weatherData}
           locationName={locationName}
           onCreateProjectSite={() => {
             // Close the popup
@@ -173,7 +180,7 @@ export default function Map() {
       if (popupRef.current) {
         const errorDiv = document.createElement('div');
         errorDiv.className = 'p-4';
-        const errorMessage = error instanceof Error && error.message.includes('Weather API error') 
+        const errorMessage = error instanceof Error && error.message.includes('outside the United States') 
           ? '⚠️ Weather alerts are only available for locations within the United States'
           : '⚠️ Weather data unavailable';
         errorDiv.innerHTML = `<p class="text-white">${errorMessage}</p>`;
@@ -191,9 +198,7 @@ export default function Map() {
 
     try {
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          searchQuery
-        )}.json?access_token=${mapboxgl.accessToken}&types=place,region,country`
+        `/api/geocode?q=${encodeURIComponent(searchQuery)}`
       );
 
       if (!response.ok) {
@@ -201,13 +206,15 @@ export default function Map() {
       }
 
       const data = await response.json();
-      if (!data.features || data.features.length === 0) {
+      if (!data || data.length === 0) {
         setError('No results found');
         return;
       }
 
-      const [lng, lat] = data.features[0].center;
-      const locationName = data.features[0].place_name;
+      const location = data[0];
+      const lng = location.lon;
+      const lat = location.lat;
+      const locationName = `${location.name}, ${location.state || ''} ${location.country}`.trim();
 
       mapInstance.flyTo({
         center: [lng, lat],
@@ -247,10 +254,11 @@ export default function Map() {
           const [longitude, latitude] = site.polygon.coordinates[0][0];
           const weatherData = await weatherService.getWeatherData(latitude, longitude, site.name, site.id);
           
-          // Add to project weather with generated ID
+          // Add to project weather with generated ID and site name
           setProjectWeather(prev => [...prev, {
             id: `weather-${site.id}-${Date.now()}`,
             project_site_id: site.id,
+            site_name: site.name,
             weather_data: {
               forecast: {
                 temperature: weatherData.temperature,
@@ -281,23 +289,29 @@ export default function Map() {
 
       setProjectSites(sitesWithWeather);
       
-      // Add source and layer for project sites if they don't exist
+      // Create GeoJSON data for all sites
+      const geojsonData: GeoJSON.FeatureCollection = {
+        type: 'FeatureCollection',
+        features: sitesWithWeather.map(site => ({
+          type: 'Feature' as const,
+          geometry: site.polygon,
+          properties: {
+            id: site.id,
+            name: site.name,
+            description: site.description,
+            hasAlerts: site.alerts && site.alerts.length > 0,
+            alertText: site.alerts && site.alerts.length > 0 
+              ? `${site.alerts[0].type}: ${site.alerts[0].description}`
+              : ''
+          }
+        }))
+      };
+
+      // Add or update source and layers
       if (!map.getSource('project-sites')) {
         map.addSource('project-sites', {
           type: 'geojson',
-          data: {
-            type: 'FeatureCollection',
-            features: sitesWithWeather.map(site => ({
-              type: 'Feature',
-              geometry: site.polygon,
-              properties: {
-                id: site.id,
-                name: site.name,
-                description: site.description,
-                hasAlerts: site.alerts && site.alerts.length > 0
-              }
-            }))
-          }
+          data: geojsonData
         });
 
         map.addLayer({
@@ -323,22 +337,82 @@ export default function Map() {
             'line-width': 1
           }
         });
-      } else {
-        // Update existing source
-        const source = map.getSource('project-sites') as mapboxgl.GeoJSONSource;
-        source.setData({
-          type: 'FeatureCollection',
-          features: sitesWithWeather.map(site => ({
-            type: 'Feature',
-            geometry: site.polygon,
-            properties: {
-              id: site.id,
-              name: site.name,
-              description: site.description,
-              hasAlerts: site.alerts && site.alerts.length > 0
-            }
-          }))
+
+        // Add layer for project site names
+        map.addLayer({
+          id: 'project-sites-labels',
+          type: 'symbol',
+          source: 'project-sites',
+          layout: {
+            'text-field': ['get', 'name'],
+            'text-size': 14,  // Constant size regardless of zoom
+            'text-anchor': 'center',
+            'text-justify': 'center',
+            'text-offset': [0, -0.5],
+            'text-allow-overlap': true,
+            'text-ignore-placement': true,
+            'text-max-width': 20,
+            'symbol-spacing': 1,
+            'text-padding': 0,
+            'symbol-z-order': 'viewport-y',  // Ensure labels are always on top
+            'visibility': 'visible',
+            'symbol-sort-key': ['get', 'name']
+          },
+          paint: {
+            'text-color': '#ffffff',
+            'text-halo-color': '#000000',
+            'text-halo-width': 3,  // Increased halo for better visibility
+            'text-opacity': 1
+          },
+          minzoom: 0,  // Show at all zoom levels
+          maxzoom: 24
         });
+
+        // Add layer for alert labels
+        map.addLayer({
+          id: 'project-sites-alerts',
+          type: 'symbol',
+          source: 'project-sites',
+          layout: {
+            'text-field': [
+              'case',
+              ['get', 'hasAlerts'], ['get', 'alertText'],
+              ''
+            ],
+            'text-size': 10,  // Constant size for alert text
+            'text-anchor': 'center',
+            'text-justify': 'center',
+            'text-offset': [0, 0.5],
+            'text-allow-overlap': true,
+            'text-ignore-placement': true,
+            'text-max-width': 20,
+            'symbol-spacing': 1,
+            'text-padding': 0,
+            'symbol-z-order': 'viewport-y',  // Ensure labels are always on top
+            'visibility': 'visible',
+            'symbol-sort-key': ['get', 'name']
+          },
+          paint: {
+            'text-color': [
+              'match',
+              ['slice', ['get', 'alertText'], 0, ['index-of', ':', ['get', 'alertText']]],
+              'Warning', '#dc2626',
+              'Watch', '#ea580c',
+              'Advisory', '#ca8a04',
+              'Statement', '#2563eb',
+              '#dc2626'  // default to red
+            ],
+            'text-halo-color': '#000000',
+            'text-halo-width': 2,
+            'text-opacity': 1
+          },
+          minzoom: 0,  // Show at all zoom levels
+          maxzoom: 24
+        });
+      } else {
+        // Update existing source with all sites
+        const source = map.getSource('project-sites') as mapboxgl.GeoJSONSource;
+        source.setData(geojsonData);
       }
     } catch (error) {
       console.error('Error loading project sites:', error);
@@ -672,9 +746,18 @@ export default function Map() {
   };
 
   // Handle project site deletion
-  const handleProjectSiteDelete = (siteId: string) => {
+  const handleProjectSiteDelete = async (siteId: string) => {
+    // Remove map layers
     removeProjectSiteLayers(siteId);
+    
+    // Update project sites state
     setProjectSites(prevSites => prevSites.filter(site => site.id !== siteId));
+    
+    // Update project weather state
+    setProjectWeather(prevWeather => prevWeather.filter(pw => pw.project_site_id !== siteId));
+
+    // Reload project sites to ensure all components are in sync
+    await loadProjectSites();
   };
 
   // Initialize map
@@ -771,6 +854,18 @@ export default function Map() {
           onOpenChange={setIsSidebarOpen}
           setProjectSites={setProjectSites}
           projectWeather={projectWeather}
+          setProjectWeather={setProjectWeather}
+          alertPreferences={alertPreferences}
+          onNavigateToSite={(siteId) => {
+            // Find the site
+            const site = projectSites.find(s => s.id === siteId);
+            if (site) {
+              // Open the sidebar if it's closed
+              setIsSidebarOpen(true);
+              // Navigate to the site
+              handleProjectSiteClick(site);
+            }
+          }}
         />
         <div ref={mapContainer} className="w-full h-full" style={{ position: 'absolute' }} />
       </div>

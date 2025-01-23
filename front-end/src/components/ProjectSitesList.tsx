@@ -94,6 +94,9 @@ export function ProjectSitesList({
       setProjectSites(prevSites => 
         prevSites.map(s => s.id === site.id ? { ...s, ...typedUpdatedSite } : s)
       );
+
+      // Update weather data with new site name
+      onWeatherAlerts(site.alerts || [], editForm.name);
       
       // Reset edit state
       setEditingSiteId(null);
@@ -116,8 +119,18 @@ export function ProjectSitesList({
     try {
       setDeletingSiteId(siteToDelete.id);
       await projectSitesService.delete(siteToDelete.id);
+      
+      // Update local state
       setSites(sites.filter(site => site.id !== siteToDelete.id));
+      
+      // Update parent state and trigger weather data cleanup
       onSiteDelete(siteToDelete.id);
+      
+      // Clear alerts for the deleted site
+      onWeatherAlerts([], siteToDelete.name);
+
+      // Update project sites state to remove the deleted site
+      setProjectSites(prevSites => prevSites.filter(site => site.id !== siteToDelete.id));
     } catch (error) {
       console.error('Error deleting site:', error);
     } finally {
