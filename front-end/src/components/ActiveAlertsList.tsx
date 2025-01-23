@@ -65,10 +65,10 @@ export function ActiveAlertsList({ alerts, alertPreferences, expandedAlertId, on
         return (
           <div 
             key={index}
-            className={`rounded-lg overflow-hidden ${
-              alert.type === 'Warning' ? 'bg-red-950/50' :
-              alert.type === 'Watch' ? 'bg-orange-950/50' :
-              alert.type === 'Advisory' ? 'bg-yellow-950/50' :
+            className={`rounded-lg overflow-hidden bg-blur-md ${
+              alert.type === 'Warning' ? 'bg-red-500/20' :
+              alert.type === 'Watch' ? 'bg-orange-500/20' :
+              alert.type === 'Advisory' ? 'bg-yellow-500/20' :
               'bg-blue-950/20'
             }`}
           >

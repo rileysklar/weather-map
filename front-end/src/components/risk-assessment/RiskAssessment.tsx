@@ -103,12 +103,12 @@ const calculateRiskScore = (
   };
 };
 
-const getRiskLevel = (score: number): { level: string; color: string } => {
-  if (score >= 80) return { level: 'Extreme', color: 'red' };
-  if (score >= 60) return { level: 'High', color: 'orange' };
-  if (score >= 40) return { level: 'Moderate', color: 'yellow' };
-  if (score >= 20) return { level: 'Low', color: 'green' };
-  return { level: 'Minimal', color: 'blue' };
+const getRiskLevel = (score: number): { level: string; colorClass: string } => {
+  if (score >= 80) return { level: 'Extreme', colorClass: 'bg-red-500/20 text-red-400' };
+  if (score >= 60) return { level: 'High', colorClass: 'bg-orange-500/20 text-orange-400' };
+  if (score >= 40) return { level: 'Moderate', colorClass: 'bg-yellow-500/20 text-yellow-400' };
+  if (score >= 20) return { level: 'Low', colorClass: 'bg-green-500/20 text-green-400' };
+  return { level: 'Minimal', colorClass: 'bg-blue-500/20 text-blue-400' };
 };
 
 const SiteRiskAssessment: React.FC<{ weather: ProjectWeather }> = ({ weather }) => {
@@ -139,15 +139,9 @@ const SiteRiskAssessment: React.FC<{ weather: ProjectWeather }> = ({ weather }) 
           isExpanded ? 'bg-white/10' : 'hover:bg-white/5'
         }`}
       >
-        <div className="flex items-center gap-2 text-left">
+        <div className="flex flex-col gap-1 text-left">
           <span className="font-medium text-white">{weather.site_name || `Site ${weather.project_site_id}`}</span>
-          <span className={`px-2 py-1 rounded-full text-sm ${
-            riskLevel.color === 'red' ? 'bg-red-500/20 text-red-400' :
-            riskLevel.color === 'orange' ? 'bg-orange-500/20 text-orange-400' :
-            riskLevel.color === 'yellow' ? 'bg-yellow-500/20 text-yellow-400' :
-            riskLevel.color === 'green' ? 'bg-green-500/20 text-green-400' :
-            'bg-blue-500/20 text-blue-400'
-          }`}>
+          <span className={`w-fit px-2 py-1 rounded text-xs font-medium ${riskLevel.colorClass}`}>
             {riskLevel.level}
           </span>
         </div>
@@ -168,10 +162,10 @@ const SiteRiskAssessment: React.FC<{ weather: ProjectWeather }> = ({ weather }) 
             <div className="h-2 bg-white/10 rounded-full overflow-hidden">
               <div 
                 className={`h-full rounded-full transition-all duration-500 ${
-                  riskLevel.color === 'red' ? 'bg-red-500' :
-                  riskLevel.color === 'orange' ? 'bg-orange-500' :
-                  riskLevel.color === 'yellow' ? 'bg-yellow-500' :
-                  riskLevel.color === 'green' ? 'bg-green-500' :
+                  riskLevel.colorClass === 'bg-red-500/20 text-red-400' ? 'bg-red-500' :
+                  riskLevel.colorClass === 'bg-orange-500/20 text-orange-400' ? 'bg-orange-500' :
+                  riskLevel.colorClass === 'bg-yellow-500/20 text-yellow-400' ? 'bg-yellow-500' :
+                  riskLevel.colorClass === 'bg-green-500/20 text-green-400' ? 'bg-green-500' :
                   'bg-blue-500'
                 }`}
                 style={{ width: `${score}%` }}
@@ -197,17 +191,17 @@ const SiteRiskAssessment: React.FC<{ weather: ProjectWeather }> = ({ weather }) 
                   name="Risk Factors"
                   dataKey="value"
                   stroke={
-                    riskLevel.color === 'red' ? '#ef4444' :
-                    riskLevel.color === 'orange' ? '#f97316' :
-                    riskLevel.color === 'yellow' ? '#eab308' :
-                    riskLevel.color === 'green' ? '#22c55e' :
+                    riskLevel.colorClass === 'bg-red-500/20 text-red-400' ? '#ef4444' :
+                    riskLevel.colorClass === 'bg-orange-500/20 text-orange-400' ? '#f97316' :
+                    riskLevel.colorClass === 'bg-yellow-500/20 text-yellow-400' ? '#eab308' :
+                    riskLevel.colorClass === 'bg-green-500/20 text-green-400' ? '#22c55e' :
                     '#3b82f6'
                   }
                   fill={
-                    riskLevel.color === 'red' ? 'rgba(239,68,68,0.2)' :
-                    riskLevel.color === 'orange' ? 'rgba(249,115,22,0.2)' :
-                    riskLevel.color === 'yellow' ? 'rgba(234,179,8,0.2)' :
-                    riskLevel.color === 'green' ? 'rgba(34,197,94,0.2)' :
+                    riskLevel.colorClass === 'bg-red-500/20 text-red-400' ? 'rgba(239,68,68,0.2)' :
+                    riskLevel.colorClass === 'bg-orange-500/20 text-orange-400' ? 'rgba(249,115,22,0.2)' :
+                    riskLevel.colorClass === 'bg-yellow-500/20 text-yellow-400' ? 'rgba(234,179,8,0.2)' :
+                    riskLevel.colorClass === 'bg-green-500/20 text-green-400' ? 'rgba(34,197,94,0.2)' :
                     'rgba(59,130,246,0.2)'
                   }
                   fillOpacity={0.6}

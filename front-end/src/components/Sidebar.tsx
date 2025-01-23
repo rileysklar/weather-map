@@ -544,7 +544,7 @@ export function Sidebar({
                                     className="w-full flex items-center justify-between p-3 hover:bg-white/10 transition-colors duration-200"
                                     onClick={() => setExpandedSites(prev => ({ ...prev, [site.id]: !prev[site.id] }))}
                                   >
-                                    <span className="text-lg font-medium p-2 text-white">{site.name}</span>
+                                    <span className="text-md font-medium p-2 text-white">{site.name}</span>
                                     <ChevronDown 
                                       className={`w-4 h-4 transition-transform duration-200 ${expandedSites[site.id] ? 'rotate-180' : ''}`}
                                       aria-hidden="true"
