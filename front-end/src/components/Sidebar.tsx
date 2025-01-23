@@ -591,7 +591,7 @@ export function Sidebar({
                       <Building2 className="w-5 h-5" />
                       Create New Project Site
                     </button>
-                    <div className="flex justify-center mt-4 gap-2">
+                    <div className="flex justify-between mt-4">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div
@@ -604,9 +604,9 @@ export function Sidebar({
                                 setIsSettingsOpen(true);
                               }
                             }}
-                            className="p-2 hover:bg-white/10 rounded-lg transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+                            className="p-2.5 hover:bg-white/10 rounded-lg transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20 group"
                           >
-                            <Settings className="w-5 h-5 text-white/80" aria-hidden="true" />
+                            <Settings className="w-5 h-5 text-white/80 group-hover:text-blue-400 transition-colors" aria-hidden="true" />
                             <span className="sr-only">Open Settings</span>
                           </div>
                         </TooltipTrigger>
@@ -615,76 +615,41 @@ export function Sidebar({
                         </TooltipContent>
                       </Tooltip>
 
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div
-                            role="button"
-                            tabIndex={0}
-                            className="p-2 hover:bg-white/10 rounded-lg transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
-                            onClick={async () => {
-                              try {
-                                for (const site of projectSites) {
-                                  const [longitude, latitude] = site.polygon.coordinates[0][0];
-                                  const weatherData = await weatherService.getWeatherData(latitude, longitude, site.name, site.id);
-                                  handleWeatherAlerts(weatherData.alerts, site.name);
-                                }
-                              } catch (error) {
-                                console.error('Failed to refresh weather alerts:', error);
-                              }
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                (async () => {
-                                  try {
-                                    for (const site of projectSites) {
-                                      const [longitude, latitude] = site.polygon.coordinates[0][0];
-                                      const weatherData = await weatherService.getWeatherData(latitude, longitude, site.name, site.id);
-                                      handleWeatherAlerts(weatherData.alerts, site.name);
-                                    }
-                                  } catch (error) {
-                                    console.error('Failed to refresh weather alerts:', error);
-                                  }
-                                })();
-                              }
-                            }}
-                          >
-                            <RefreshCw className="w-5 h-5 text-white/80" aria-hidden="true" />
-                            <span className="sr-only">Refresh Weather Alerts</span>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Refresh Weather Alerts</p>
-                        </TooltipContent>
-                      </Tooltip>
-
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div
-                            role="button"
-                            tabIndex={0}
-                            className="p-2 hover:bg-white/10 rounded-lg transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
-                            onClick={() => {
-                              const input = document.createElement('input');
-                              input.type = 'file';
-                              input.accept = '.json';
-                              input.onchange = async (e) => {
-                                const file = (e.target as HTMLInputElement).files?.[0];
-                                if (!file) return;
-                                
+                      <div className="flex gap-1">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              className="p-2.5 hover:bg-white/10 rounded-lg transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20 group"
+                              onClick={async () => {
                                 try {
-                                  const result = await projectImportService.handleImport(file);
-                                  console.log('Import results:', result);
-                                  window.location.reload();
+                                  for (const site of projectSites) {
+                                    const [longitude, latitude] = site.polygon.coordinates[0][0];
+                                    const weatherData = await weatherService.getWeatherData(latitude, longitude, site.name, site.id);
+                                    handleWeatherAlerts(weatherData.alerts, site.name);
+                                  }
                                 } catch (error) {
-                                  console.error('Failed to import sites:', error);
+                                  console.error('Failed to refresh weather alerts:', error);
                                 }
-                              };
-                              input.click();
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
+                              }}
+                            >
+                              <RefreshCw className="w-5 h-5 text-white/80 group-hover:text-emerald-400 transition-colors" aria-hidden="true" />
+                              <span className="sr-only">Refresh Weather Alerts</span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Refresh Weather Alerts</p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              className="p-2.5 hover:bg-white/10 rounded-lg transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20 group"
+                              onClick={() => {
                                 const input = document.createElement('input');
                                 input.type = 'file';
                                 input.accept = '.json';
@@ -701,50 +666,40 @@ export function Sidebar({
                                   }
                                 };
                                 input.click();
-                              }
-                            }}
-                          >
-                            <Upload className="w-5 h-5 text-white/80" aria-hidden="true" />
-                            <span className="sr-only">Import Project Sites</span>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Import Project Sites</p>
-                        </TooltipContent>
-                      </Tooltip>
+                              }}
+                            >
+                              <Upload className="w-5 h-5 text-white/80 group-hover:text-purple-400 transition-colors" aria-hidden="true" />
+                              <span className="sr-only">Import Project Sites</span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Import Project Sites</p>
+                          </TooltipContent>
+                        </Tooltip>
 
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => {
-                              try {
-                                projectExportService.exportToJson(projectSites);
-                              } catch (error) {
-                                console.error('Failed to export sites:', error);
-                              }
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => {
                                 try {
                                   projectExportService.exportToJson(projectSites);
                                 } catch (error) {
                                   console.error('Failed to export sites:', error);
                                 }
-                              }
-                            }}
-                            className="p-2 hover:bg-white/10 rounded-lg transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
-                          >
-                            <Download className="w-5 h-5 text-white/80" aria-hidden="true" />
-                            <span className="sr-only">Export Project Sites</span>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Export Project Sites</p>
-                        </TooltipContent>
-                      </Tooltip>
+                              }}
+                              className="p-2.5 hover:bg-white/10 rounded-lg transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20 group"
+                            >
+                              <Download className="w-5 h-5 text-white/80 group-hover:text-yellow-400 transition-colors" aria-hidden="true" />
+                              <span className="sr-only">Export Project Sites</span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Export Project Sites</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                     </div>
                   </div>
                 )}

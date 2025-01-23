@@ -132,7 +132,7 @@ const SiteRiskAssessment: React.FC<{ weather: ProjectWeather }> = ({ weather }) 
   const riskLevel = getRiskLevel(score);
 
   return (
-    <div className="bg-white/5 border border-white/10 rounded-lg">
+    <div className="bg-white/5 backdrop-blur-sm border border-white/5 rounded-lg shadow-lg">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className={`w-full flex items-center justify-between p-4 transition-colors ${

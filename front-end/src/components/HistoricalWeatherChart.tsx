@@ -82,7 +82,7 @@ export function HistoricalWeatherChart({ siteId, days = 7 }: HistoricalWeatherCh
   const groupedData = historicalData.reduce<{ [date: string]: {
     temperature: number[];
     precipitation: number[];
-    risk: number[];
+    risk_score: number[];
     count: number;
   }}>((acc, data) => {
     const date = new Date(data.created_at).toLocaleDateString();
@@ -90,13 +90,13 @@ export function HistoricalWeatherChart({ siteId, days = 7 }: HistoricalWeatherCh
       acc[date] = {
         temperature: [],
         precipitation: [],
-        risk: [],
+        risk_score: [],
         count: 0
       };
     }
     acc[date].temperature.push(data.temperature);
     acc[date].precipitation.push(data.precipitation_probability);
-    acc[date].risk.push(data.risk_score);
+    acc[date].risk_score.push(data.risk_score);
     acc[date].count++;
     return acc;
   }, {});
@@ -109,7 +109,7 @@ export function HistoricalWeatherChart({ siteId, days = 7 }: HistoricalWeatherCh
   const averages = dates.map(date => ({
     temperature: groupedData[date].temperature.reduce((a, b) => a + b, 0) / groupedData[date].count,
     precipitation: groupedData[date].precipitation.reduce((a, b) => a + b, 0) / groupedData[date].count,
-    risk: groupedData[date].risk.reduce((a, b) => a + b, 0) / groupedData[date].count
+    risk_score: groupedData[date].risk_score.reduce((a, b) => a + b, 0) / groupedData[date].count
   }));
 
   const chartData: ChartData<'line'> = {
@@ -131,7 +131,7 @@ export function HistoricalWeatherChart({ siteId, days = 7 }: HistoricalWeatherCh
       },
       {
         label: 'Risk Score',
-        data: averages.map(avg => avg.risk),
+        data: averages.map(avg => avg.risk_score),
         borderColor: 'rgb(75, 192, 192)',
         backgroundColor: 'rgba(75, 192, 192, 0.5)',
         tension: 0.3
@@ -154,25 +154,12 @@ export function HistoricalWeatherChart({ siteId, days = 7 }: HistoricalWeatherCh
           useBorderRadius: true,
           borderRadius: 2
         },
-        margin: 24,
-        maxWidth: 800,
-        itemGap: 24,
-        bottom: 12
-      },
-      title: {
-        display: true,
-        text: 'Historical Weather Trends',
-        color: 'white',
-        align: 'start' as const,
-        padding: {
-          top: 0,
-          bottom: 8
+        margin: {
+          bottom: 24
         },
-        font: {
-          size: 16,
-          weight: 'normal' as const
-        }
-      }
+        maxWidth: 800,
+        itemGap: 24
+      },
     },
     scales: {
       x: {
