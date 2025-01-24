@@ -23,6 +23,7 @@ export function SearchBar({ value, onChange, onSearch, isLoading, error }: Searc
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -35,15 +36,16 @@ export function SearchBar({ value, onChange, onSearch, isLoading, error }: Searc
       setIsLoadingSuggestions(true);
       try {
         const response = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-            value
-          )}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&types=place,region,country&limit=5`
+          `/api/geocode?q=${encodeURIComponent(value)}`
         );
 
         if (!response.ok) throw new Error('Failed to fetch suggestions');
 
         const data = await response.json();
-        setSuggestions(data.features);
+        setSuggestions(data.map((location: any) => ({
+          place_name: `${location.name}, ${location.state || ''} ${location.country}`.trim(),
+          center: [location.lon, location.lat]
+        })));
       } catch (error) {
         console.error('Error fetching suggestions:', error);
       } finally {
@@ -65,6 +67,39 @@ export function SearchBar({ value, onChange, onSearch, isLoading, error }: Searc
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    setSelectedIndex(-1);
+  }, [suggestions]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedIndex(prev => 
+          prev < suggestions.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedIndex(prev => prev > -1 ? prev - 1 : prev);
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedIndex >= 0) {
+          handleSuggestionClick(suggestions[selectedIndex]);
+        } else {
+          handleSubmit(e);
+        }
+        break;
+      case 'Escape':
+        setShowSuggestions(false);
+        setSelectedIndex(-1);
+        break;
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,12 +127,13 @@ export function SearchBar({ value, onChange, onSearch, isLoading, error }: Searc
             setShowSuggestions(true);
           }}
           onFocus={() => setShowSuggestions(true)}
+          onKeyDown={handleKeyDown}
           className={`w-full py-2 md:py-3 lg:py-4 pr-12 ${glassInputClassName}`}
         />
         <Button
           type="submit"
           disabled={isLoading}
-          className="absolute right-0 top-1/2 -translate-y-1/2 bg-blue-500 hover:bg-blue-600 rounded-l-none"
+          className="absolute right-0 top-1/2 -translate-y-1/2 bg-emerald-500 hover:bg-emerald-600 rounded-l-none"
         >
           <Search className={`h-5 w-5 text-white ${isLoading ? 'animate-spin' : ''}`} />
         </Button>
@@ -109,7 +145,9 @@ export function SearchBar({ value, onChange, onSearch, isLoading, error }: Searc
             {suggestions.map((suggestion, index) => (
               <button
                 key={index}
-                className="w-full px-4 py-2 text-left text-white hover:bg-white/10 flex items-center gap-2 transition-colors"
+                className={`w-full px-4 py-2 text-left text-white hover:bg-white/10 flex items-center gap-2 transition-colors ${
+                  index === selectedIndex ? 'bg-white/20' : ''
+                }`}
                 onClick={() => handleSuggestionClick(suggestion)}
               >
                 <MapPin className="h-4 w-4 shrink-0 text-blue-400" />

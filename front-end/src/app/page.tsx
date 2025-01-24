@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { WeatherProvider } from '@/contexts/WeatherContext';
 
 const Map = dynamic(
   () => import('@/components/Map'),
@@ -16,8 +17,10 @@ const Map = dynamic(
 
 export default function Home() {
   return (
-    <div className="fixed inset-0 overflow-hidden">
-      <Map />
-    </div>
+    <WeatherProvider>
+      <div className="fixed inset-0 overflow-hidden">
+        <Map />
+      </div>
+    </WeatherProvider>
   );
 }

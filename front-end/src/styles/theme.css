@@ -1,0 +1,74 @@
+:root {
+  /* Colors */
+  --color-primary: #10b981;
+  --color-primary-light: rgba(16, 185, 129, 0.2);
+  --color-warning: #ef4444;
+  --color-warning-light: rgba(239, 68, 68, 0.2);
+  --color-watch: #f97316;
+  --color-watch-light: rgba(249, 115, 22, 0.2);
+  --color-advisory: #eab308;
+  --color-advisory-light: rgba(234, 179, 8, 0.2);
+  --color-info: #3b82f6;
+  --color-info-light: rgba(59, 130, 246, 0.2);
+  
+  /* Text colors */
+  --color-foreground: #ffffff;
+  --color-background: #000000;
+  --color-white: #ffffff;
+  --color-white-10: rgba(255, 255, 255, 0.1);
+  --color-white-20: rgba(255, 255, 255, 0.2);
+  
+  /* Background */
+  --bg-overlay: rgba(0, 0, 0, 0.2);
+  --bg-overlay-hover: rgba(255, 255, 255, 0.1);
+  --bg-glass: rgba(255, 255, 255, 0.05);
+  
+  /* Border */
+  --border-light: rgba(255, 255, 255, 0.2);
+  
+  /* Effects */
+  --blur-amount: 8px;
+  
+  /* Transitions */
+  --transition-speed: 200ms;
+  --transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Glass effect utilities */
+.glass {
+  background: var(--bg-glass);
+  backdrop-filter: blur(var(--blur-amount));
+  -webkit-backdrop-filter: blur(var(--blur-amount));
+  border: 1px solid var(--border-light);
+}
+
+.glass-hover:hover {
+  background: var(--bg-overlay-hover);
+}
+
+/* Alert type utilities */
+.alert-warning {
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+}
+
+.alert-watch {
+  background: var(--color-watch-light);
+  color: var(--color-watch);
+}
+
+.alert-advisory {
+  background: var(--color-advisory-light);
+  color: var(--color-advisory);
+}
+
+.alert-info {
+  background: var(--color-info-light);
+  color: var(--color-info);
+}
+
+/* Animation utilities */
+.transition-standard {
+  transition-duration: var(--transition-speed);
+  transition-timing-function: var(--transition-timing);
+} 

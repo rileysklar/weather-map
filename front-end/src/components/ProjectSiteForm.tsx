@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { X } from 'lucide-react';
+import { X, Map as MapIcon } from 'lucide-react';
 import { glassClassName, glassCardClassName, glassInputClassName } from '@/components/ui/styles';
 
 interface ProjectSiteFormProps {
@@ -14,13 +14,15 @@ interface ProjectSiteFormProps {
   currentPolygon: Array<{ id: string; coordinates: number[]; index: number }>;
   onSubmit: (data: { name: string; description: string; polygon: number[][] }) => void;
   onCancel: () => void;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export default function ProjectSiteForm({ 
   isDrawing = false, 
   currentPolygon = [], 
   onSubmit, 
-  onCancel 
+  onCancel,
+  onOpenChange 
 }: ProjectSiteFormProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -79,37 +81,55 @@ export default function ProjectSiteForm({
     );
   };
 
+  const handleDrawOnMap = () => {
+    // Close the sidebar to allow drawing on the map
+    onOpenChange?.(false);
+  };
+
   return (
     <Card className="w-full backdrop-blur-sm border-white/20">
-      <CardHeader className="flex flex-col  space-y-0 pb-2">
-        <div className='flex flex-row justify-between'><CardTitle className="text-xl font-bold">New Project Site</CardTitle>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onCancel}
-          className="h-8 w-8 p-0 text-white hover:bg-white/10"
-        >
-          <X className="h-4 w-4" />
-        </Button>
+      <CardHeader className="flex flex-col space-y-0 pb-2">
+        <div className='flex flex-row justify-between'>
+          <CardTitle className="text-xl font-bold">New Project Site</CardTitle>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onCancel}
+            className="h-8 w-8 p-0 text-white hover:bg-white/10"
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
-         <div className="pt-2">
-            {isDrawing ? (
-              <p className="text-sm text-blue-400">
-                Click on the map to draw a polygon. Click the first point to close the shape.
-              </p>
-            ) : currentPolygon && currentPolygon.length > 0 ? (
-              <p className="text-sm text-green-400">
-                ✓ Polygon drawn with {currentPolygon.length} points
-              </p>
-            ) : (
-              <p className="text-sm text-white/70">
-                Click "Start Drawing" to begin creating your polygon
-              </p>
-            )}
-          </div>
+        <div className="pt-2">
+          {isDrawing ? (
+            <p className="text-sm text-blue-400">
+              Click on the map to draw a polygon. Click the first point to close the shape.
+            </p>
+          ) : currentPolygon && currentPolygon.length > 0 ? (
+            <p className="text-sm text-green-400">
+              ✓ Polygon drawn with {currentPolygon.length} points
+            </p>
+          ) : (
+            <p className="text-sm text-white/70">
+              {onOpenChange ? "Click 'Draw on Map' to begin creating your polygon" : "Click 'Start Drawing' to begin creating your polygon"}
+            </p>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Only show the Draw on Map button on mobile when we have the onOpenChange prop */}
+          {onOpenChange && !currentPolygon.length && (
+            <Button
+              type="button"
+              onClick={handleDrawOnMap}
+              className="w-full md:hidden bg-blue-500/50 hover:bg-blue-500/60 text-white flex items-center justify-center gap-2"
+            >
+              <MapIcon className="w-4 h-4" />
+              Draw on Map
+            </Button>
+          )}
+          
           <div className="space-y-2">
             <Label htmlFor="name" className="text-white">Site Name</Label>
             <Input
@@ -156,7 +176,7 @@ export default function ProjectSiteForm({
             <Button
               type="submit"
               disabled={!name || !description || !currentPolygon || currentPolygon.length < 3}
-              className="bg-blue-500/50 hover:bg-blue-500/60 text-white"
+              className="bg-emerald-500/50 hover:bg-emerald-500/60 text-white"
             >
               Create Site
             </Button>
